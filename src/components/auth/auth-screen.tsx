@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { LanguageSwitch } from '@/components/ui/language-switch';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -14,13 +15,16 @@ type AuthScreenProps = PropsWithChildren<{
   footer?: ReactNode;
 }>;
 
-/** Shared shell for the auth flow: logo, heading, scrollable form and a footer link. */
+/** Shared shell for the auth flow: language switch, logo, heading, scrollable form and a footer link. */
 export function AuthScreen({ title, subtitle, footer, children }: AuthScreenProps) {
   const theme = useTheme();
 
   return (
     <ThemedView style={styles.root}>
       <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+        <View style={styles.topBar}>
+          <LanguageSwitch />
+        </View>
         <KeyboardAvoidingView
           style={styles.root}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -62,11 +66,17 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
+  },
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.five,
+    paddingVertical: Spacing.four,
   },
   content: {
     width: '100%',

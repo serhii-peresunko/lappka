@@ -31,11 +31,13 @@ const styles = StyleSheet.create({
     fontWeight: 500,
   },
   title: {
+    fontFamily: Fonts.rounded,
     fontSize: 48,
     fontWeight: 600,
     lineHeight: 52,
   },
   subtitle: {
+    fontFamily: Fonts.rounded,
     fontSize: 32,
     lineHeight: 44,
     fontWeight: 600,

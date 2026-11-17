@@ -12,6 +12,7 @@ import {
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useI18n } from '@/i18n/i18n-provider';
 
 export type TextFieldProps = Omit<TextInputProps, 'ref'> & {
   ref?: Ref<TextInputInstance>;
@@ -32,6 +33,7 @@ export function TextField({
   ...rest
 }: TextFieldProps) {
   const theme = useTheme();
+  const { t } = useI18n();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(true);
 
@@ -62,7 +64,7 @@ export function TextField({
         {password && (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={hidden ? 'Show password' : 'Hide password'}
+            accessibilityLabel={hidden ? t.field.showPassword : t.field.hidePassword}
             hitSlop={8}
             onPress={() => setHidden((value) => !value)}
             style={styles.toggle}>
@@ -99,6 +101,8 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   input: {
+    // The field border already shows focus; drop the browser's extra outline on web.
+    outlineWidth: 0,
     flex: 1,
     fontSize: 16,
     paddingHorizontal: Spacing.three,

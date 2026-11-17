@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useI18n } from '@/i18n/i18n-provider';
 import { useAuth } from '@/providers/auth-provider';
 
 function GoogleLogo() {
@@ -51,16 +52,17 @@ type SocialButtonsProps = {
 export function SocialButtons({ mode }: SocialButtonsProps) {
   const theme = useTheme();
   const { signInWithApple, signInWithGoogle } = useAuth();
+  const { t } = useI18n();
   const [pending, setPending] = useState<'apple' | 'google' | null>(null);
 
-  const verb = mode === 'sign-in' ? 'Continue' : 'Sign up';
+  const label = mode === 'sign-in' ? t.auth.continueWith : t.auth.signUpWith;
 
   async function run(provider: 'apple' | 'google') {
     setPending(provider);
     try {
       await (provider === 'apple' ? signInWithApple() : signInWithGoogle());
     } catch {
-      Alert.alert('Something went wrong', 'Please try again.');
+      Alert.alert(t.auth.errorTitle, t.auth.errorMessage);
     } finally {
       setPending(null);
     }
@@ -72,7 +74,7 @@ export function SocialButtons({ mode }: SocialButtonsProps) {
       {Platform.OS !== 'android' && (
         <Button
           variant="apple"
-          title={`${verb} with Apple`}
+          title={label('Apple')}
           icon={<AppleLogo color={theme.background} />}
           loading={pending === 'apple'}
           disabled={pending !== null}
@@ -81,7 +83,7 @@ export function SocialButtons({ mode }: SocialButtonsProps) {
       )}
       <Button
         variant="outline"
-        title={`${verb} with Google`}
+        title={label('Google')}
         icon={<GoogleLogo />}
         loading={pending === 'google'}
         disabled={pending !== null}
@@ -93,11 +95,12 @@ export function SocialButtons({ mode }: SocialButtonsProps) {
 
 export function OrDivider() {
   const theme = useTheme();
+  const { t } = useI18n();
   return (
     <View style={styles.divider}>
       <View style={[styles.line, { backgroundColor: theme.border }]} />
       <ThemedText type="small" themeColor="textSecondary">
-        or
+        {t.common.or}
       </ThemedText>
       <View style={[styles.line, { backgroundColor: theme.border }]} />
     </View>

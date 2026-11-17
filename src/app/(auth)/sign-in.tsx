@@ -8,31 +8,37 @@ import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
+import { useI18n } from '@/i18n/i18n-provider';
 import { validateEmail } from '@/lib/validation';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function SignInScreen() {
   const { signInWithEmail } = useAuth();
+  const { t } = useI18n();
   const passwordRef = useRef<TextInputInstance>(null);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Errors are derived on render so they follow the current language and clear as you type.
+  const errors = submitted
+    ? {
+        email: validateEmail(email, t),
+        password: password ? undefined : t.validation.passwordRequired,
+      }
+    : {};
+
   async function handleSubmit() {
-    const nextErrors = {
-      email: validateEmail(email),
-      password: password ? undefined : 'Enter your password',
-    };
-    setErrors(nextErrors);
-    if (nextErrors.email || nextErrors.password) return;
+    setSubmitted(true);
+    if (validateEmail(email, t) || !password) return;
 
     setSubmitting(true);
     try {
       await signInWithEmail(email.trim(), password);
     } catch {
-      Alert.alert('Could not sign in', 'Check your email and password and try again.');
+      Alert.alert(t.auth.signIn.failedTitle, t.auth.signIn.failedMessage);
     } finally {
       setSubmitting(false);
     }
@@ -40,16 +46,16 @@ export default function SignInScreen() {
 
   return (
     <AuthScreen
-      title="Welcome back"
-      subtitle="Sign in to keep your pet's care on track"
+      title={t.auth.signIn.title}
+      subtitle={t.auth.signIn.subtitle}
       footer={
         <>
           <ThemedText type="small" themeColor="textSecondary">
-            New to Lappka?{' '}
+            {t.auth.signIn.newHere}{' '}
           </ThemedText>
           <Link href="/sign-up" replace>
             <ThemedText type="smallBold" themeColor="primary">
-              Create an account
+              {t.auth.signIn.createAccount}
             </ThemedText>
           </Link>
         </>
@@ -59,8 +65,8 @@ export default function SignInScreen() {
 
       <View style={styles.form}>
         <TextField
-          label="Email"
-          placeholder="you@example.com"
+          label={t.auth.emailLabel}
+          placeholder={t.auth.emailPlaceholder}
           value={email}
           onChangeText={setEmail}
           error={errors.email}
@@ -73,8 +79,8 @@ export default function SignInScreen() {
         />
         <TextField
           ref={passwordRef}
-          label="Password"
-          placeholder="Your password"
+          label={t.auth.passwordLabel}
+          placeholder={t.auth.signIn.passwordPlaceholder}
           password
           value={password}
           onChangeText={setPassword}
@@ -86,10 +92,10 @@ export default function SignInScreen() {
         />
         <View style={styles.forgot}>
           <Link href={{ pathname: '/forgot-password', params: email ? { email } : {} }} asChild>
-            <Button variant="ghost" title="Forgot password?" />
+            <Button variant="ghost" title={t.auth.signIn.forgot} />
           </Link>
         </View>
-        <Button title="Sign in" loading={submitting} onPress={handleSubmit} />
+        <Button title={t.auth.signIn.submit} loading={submitting} onPress={handleSubmit} />
       </View>
     </AuthScreen>
   );

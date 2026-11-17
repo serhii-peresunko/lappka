@@ -8,39 +8,45 @@ import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
+import { useI18n } from '@/i18n/i18n-provider';
+import type { Translation } from '@/i18n/translations';
 import { validateEmail, validatePassword } from '@/lib/validation';
 import { useAuth } from '@/providers/auth-provider';
 
-type Errors = { name?: string; email?: string; password?: string; confirm?: string };
+type Values = { name: string; email: string; password: string; confirm: string };
+
+function validate(values: Values, t: Translation) {
+  return {
+    name: values.name.trim() ? undefined : t.validation.nameRequired,
+    email: validateEmail(values.email, t),
+    password: validatePassword(values.password, t),
+    confirm: values.confirm === values.password ? undefined : t.validation.passwordsMismatch,
+  };
+}
 
 export default function SignUpScreen() {
   const { signUpWithEmail } = useAuth();
+  const { t } = useI18n();
   const emailRef = useRef<TextInputInstance>(null);
   const passwordRef = useRef<TextInputInstance>(null);
   const confirmRef = useRef<TextInputInstance>(null);
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [errors, setErrors] = useState<Errors>({});
+  const [values, setValues] = useState<Values>({ name: '', email: '', password: '', confirm: '' });
+  const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const set = (key: keyof Values) => (value: string) => setValues((current) => ({ ...current, [key]: value }));
+  const errors: Partial<ReturnType<typeof validate>> = submitted ? validate(values, t) : {};
+
   async function handleSubmit() {
-    const nextErrors: Errors = {
-      name: name.trim() ? undefined : 'Enter your name',
-      email: validateEmail(email),
-      password: validatePassword(password),
-      confirm: confirm === password ? undefined : 'Passwords do not match',
-    };
-    setErrors(nextErrors);
-    if (Object.values(nextErrors).some(Boolean)) return;
+    setSubmitted(true);
+    if (Object.values(validate(values, t)).some(Boolean)) return;
 
     setSubmitting(true);
     try {
-      await signUpWithEmail(name.trim(), email.trim(), password);
+      await signUpWithEmail(values.name.trim(), values.email.trim(), values.password);
     } catch {
-      Alert.alert('Could not create account', 'Please try again.');
+      Alert.alert(t.auth.signUp.failedTitle, t.auth.errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -48,16 +54,16 @@ export default function SignUpScreen() {
 
   return (
     <AuthScreen
-      title="Create your account"
-      subtitle="Vaccinations, grooming and pills — all in one place"
+      title={t.auth.signUp.title}
+      subtitle={t.auth.signUp.subtitle}
       footer={
         <>
           <ThemedText type="small" themeColor="textSecondary">
-            Already have an account?{' '}
+            {t.auth.signUp.haveAccount}{' '}
           </ThemedText>
           <Link href="/sign-in" replace>
             <ThemedText type="smallBold" themeColor="primary">
-              Sign in
+              {t.auth.signUp.signIn}
             </ThemedText>
           </Link>
         </>
@@ -67,10 +73,10 @@ export default function SignUpScreen() {
 
       <View style={styles.form}>
         <TextField
-          label="Name"
-          placeholder="Your name"
-          value={name}
-          onChangeText={setName}
+          label={t.auth.signUp.nameLabel}
+          placeholder={t.auth.signUp.namePlaceholder}
+          value={values.name}
+          onChangeText={set('name')}
           error={errors.name}
           autoCapitalize="words"
           autoComplete="name"
@@ -80,10 +86,10 @@ export default function SignUpScreen() {
         />
         <TextField
           ref={emailRef}
-          label="Email"
-          placeholder="you@example.com"
-          value={email}
-          onChangeText={setEmail}
+          label={t.auth.emailLabel}
+          placeholder={t.auth.emailPlaceholder}
+          value={values.email}
+          onChangeText={set('email')}
           error={errors.email}
           keyboardType="email-address"
           autoCapitalize="none"
@@ -94,11 +100,11 @@ export default function SignUpScreen() {
         />
         <TextField
           ref={passwordRef}
-          label="Password"
-          placeholder="At least 8 characters"
+          label={t.auth.passwordLabel}
+          placeholder={t.auth.signUp.passwordPlaceholder}
           password
-          value={password}
-          onChangeText={setPassword}
+          value={values.password}
+          onChangeText={set('password')}
           error={errors.password}
           autoComplete="new-password"
           textContentType="newPassword"
@@ -107,20 +113,20 @@ export default function SignUpScreen() {
         />
         <TextField
           ref={confirmRef}
-          label="Confirm password"
-          placeholder="Repeat your password"
+          label={t.auth.signUp.confirmLabel}
+          placeholder={t.auth.signUp.confirmPlaceholder}
           password
-          value={confirm}
-          onChangeText={setConfirm}
+          value={values.confirm}
+          onChangeText={set('confirm')}
           error={errors.confirm}
           autoComplete="new-password"
           textContentType="newPassword"
           returnKeyType="go"
           onSubmitEditing={handleSubmit}
         />
-        <Button title="Create account" loading={submitting} onPress={handleSubmit} />
+        <Button title={t.auth.signUp.submit} loading={submitting} onPress={handleSubmit} />
         <ThemedText type="small" themeColor="textSecondary" style={styles.legal}>
-          By creating an account you agree to the Terms of Service and Privacy Policy.
+          {t.auth.signUp.legal}
         </ThemedText>
       </View>
     </AuthScreen>

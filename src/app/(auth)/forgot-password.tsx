@@ -7,29 +7,32 @@ import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
+import { useI18n } from '@/i18n/i18n-provider';
 import { validateEmail } from '@/lib/validation';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function ForgotPasswordScreen() {
   const { sendPasswordReset } = useAuth();
+  const { t } = useI18n();
   const params = useLocalSearchParams<{ email?: string }>();
 
   const [email, setEmail] = useState(params.email ?? '');
-  const [error, setError] = useState<string>();
+  const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
 
+  const error = submitted ? validateEmail(email, t) : undefined;
+
   async function handleSubmit() {
-    const nextError = validateEmail(email);
-    setError(nextError);
-    if (nextError) return;
+    setSubmitted(true);
+    if (validateEmail(email, t)) return;
 
     setSubmitting(true);
     try {
       await sendPasswordReset(email.trim());
       setSentTo(email.trim());
     } catch {
-      Alert.alert('Could not send the link', 'Please try again.');
+      Alert.alert(t.auth.forgot.failedTitle, t.auth.errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -38,7 +41,7 @@ export default function ForgotPasswordScreen() {
   const backToSignIn = (
     <Link href="/sign-in" replace>
       <ThemedText type="smallBold" themeColor="primary">
-        Back to sign in
+        {t.auth.forgot.back}
       </ThemedText>
     </Link>
   );
@@ -46,23 +49,25 @@ export default function ForgotPasswordScreen() {
   if (sentTo) {
     return (
       <AuthScreen
-        title="Check your email"
-        subtitle={`If an account exists for ${sentTo}, we sent a link to reset your password.`}
+        title={t.auth.forgot.sentTitle}
+        subtitle={t.auth.forgot.sentSubtitle(sentTo)}
         footer={backToSignIn}>
-        <Button variant="outline" title="Send again" loading={submitting} onPress={handleSubmit} />
+        <Button
+          variant="outline"
+          title={t.auth.forgot.sendAgain}
+          loading={submitting}
+          onPress={handleSubmit}
+        />
       </AuthScreen>
     );
   }
 
   return (
-    <AuthScreen
-      title="Reset password"
-      subtitle="Enter the email you signed up with and we'll send you a reset link"
-      footer={backToSignIn}>
+    <AuthScreen title={t.auth.forgot.title} subtitle={t.auth.forgot.subtitle} footer={backToSignIn}>
       <View style={styles.form}>
         <TextField
-          label="Email"
-          placeholder="you@example.com"
+          label={t.auth.emailLabel}
+          placeholder={t.auth.emailPlaceholder}
           value={email}
           onChangeText={setEmail}
           error={error}
@@ -74,7 +79,7 @@ export default function ForgotPasswordScreen() {
           onSubmitEditing={handleSubmit}
           autoFocus={!email}
         />
-        <Button title="Send reset link" loading={submitting} onPress={handleSubmit} />
+        <Button title={t.auth.forgot.submit} loading={submitting} onPress={handleSubmit} />
       </View>
     </AuthScreen>
   );

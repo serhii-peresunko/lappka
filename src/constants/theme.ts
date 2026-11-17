@@ -8,30 +8,40 @@ import '@/global.css';
 import { Platform } from 'react-native';
 
 export const Colors = {
+  // Warm cream background, white cards and an orange accent.
   light: {
-    text: '#1C1B1A',
-    background: '#FFFFFF',
-    backgroundElement: '#F4F2F0',
-    backgroundSelected: '#E8E4E0',
-    textSecondary: '#6B6661',
-    border: '#DDD8D3',
-    primary: '#C9501C',
+    text: '#1F1A17',
+    background: '#FBF4EC',
+    backgroundElement: '#FFFFFF',
+    backgroundSelected: '#F6E9DC',
+    textSecondary: '#7A6E64',
+    border: '#EEE1D3',
+    primary: '#E8700F',
     onPrimary: '#FFFFFF',
-    primarySoft: '#FBE9E1',
-    danger: '#C62828',
+    primarySoft: '#FDE7D3',
+    danger: '#D63A2B',
+    success: '#2E9A57',
+    successSoft: '#E3F4E8',
   },
   dark: {
-    text: '#F5F3F1',
-    background: '#121110',
-    backgroundElement: '#1F1D1C',
-    backgroundSelected: '#2C2927',
-    textSecondary: '#ADA7A1',
-    border: '#3A3633',
-    primary: '#FF8A57',
-    onPrimary: '#1C1B1A',
-    primarySoft: '#3A2419',
-    danger: '#FF6B6B',
+    text: '#F7F1EB',
+    background: '#17120E',
+    backgroundElement: '#241D18',
+    backgroundSelected: '#30271F',
+    textSecondary: '#B8AB9F',
+    border: '#3A2F27',
+    primary: '#FF8E3C',
+    onPrimary: '#1F1A17',
+    primarySoft: '#3D2616',
+    danger: '#FF6B5E',
+    success: '#5BC987',
+    successSoft: '#1E3A29',
   },
+} as const;
+
+/** Soft, warm drop shadow for white cards on the cream background. */
+export const CardShadow = {
+  boxShadow: '0px 6px 18px rgba(150, 95, 40, 0.10)',
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
@@ -71,5 +81,6 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+/** Space to leave under scrolling content so it clears the floating tab bar. */
+export const BottomTabInset = 120;
 export const MaxContentWidth = 800;
