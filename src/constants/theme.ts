@@ -14,6 +14,13 @@ export const Colors = {
     backgroundElement: '#F0F0F3',
     backgroundSelected: '#E0E1E6',
     textSecondary: '#60646C',
+    border: '#D9DBE0',
+    // White text on primary is 4.6:1; primaryText is the same orange family for text on white.
+    primary: '#C4540A',
+    primaryText: '#B84C00',
+    onPrimary: '#FFFFFF',
+    primarySoft: '#FDE9DA',
+    danger: '#C62828',
   },
   dark: {
     text: '#ffffff',
@@ -21,6 +28,12 @@ export const Colors = {
     backgroundElement: '#212225',
     backgroundSelected: '#2E3135',
     textSecondary: '#B0B4BA',
+    border: '#3A3D42',
+    primary: '#FF8E3C',
+    primaryText: '#FF8E3C',
+    onPrimary: '#1A1206',
+    primarySoft: '#3A2416',
+    danger: '#FF6B6B',
   },
 } as const;
 
