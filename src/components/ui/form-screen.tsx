@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useI18n } from '@/i18n';
 
 type FormScreenProps = PropsWithChildren<{
   title: string;
@@ -25,6 +26,7 @@ type FormScreenProps = PropsWithChildren<{
 /** One column of content: heading, scrollable form, pinned footer. Used by every screen here. */
 export function FormScreen({ title, subtitle, eyebrow, footer, bottom, onBack, sheet, children }: FormScreenProps) {
   const theme = useTheme();
+  const { t } = useI18n();
   return (
     <ThemedView style={styles.root}>
       <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
@@ -39,7 +41,7 @@ export function FormScreen({ title, subtitle, eyebrow, footer, bottom, onBack, s
               {onBack ? (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Back"
+                  accessibilityLabel={t('back')}
                   hitSlop={8}
                   onPress={onBack}
                   style={styles.back}>

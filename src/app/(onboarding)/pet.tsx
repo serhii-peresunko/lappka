@@ -10,6 +10,7 @@ import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { breedLook } from '@/data/breeds';
+import { useI18n } from '@/i18n';
 import { parseInstagram } from '@/lib/instagram';
 import { useSession, type PetSex } from '@/providers/session';
 
@@ -39,10 +40,10 @@ const digitsOnly = (text: string) => text.replace(/\D/g, '').slice(0, 2);
 /** Step 3: breed, name, birth date (or approximate age) and a few words about the pet. */
 export default function PetDetailsScreen() {
   const theme = useTheme();
+  const { t } = useI18n();
   const { draftPetType, setDraftPetType, savePet } = useSession();
   // The layout only shows this screen once a type is chosen.
   const type = draftPetType ?? 'dog';
-  const noun = type === 'cat' ? 'cat' : 'dog';
 
   const [breed, setBreed] = useState('');
   const [name, setName] = useState('');
@@ -63,20 +64,20 @@ export default function PetDetailsScreen() {
   const instagramHandle = parseInstagram(instagram);
 
   const errors = {
-    instagram: instagramHandle === undefined ? 'Enter a handle like @bublyk or a profile link' : undefined,
-    breed: breed.trim() ? undefined : 'Choose a breed',
-    name: name.trim() ? undefined : `Enter your ${noun}'s name`,
-    sex: sex ? undefined : 'Choose male or female',
+    instagram: instagramHandle === undefined ? t('pet.errInstagram') : undefined,
+    breed: breed.trim() ? undefined : t('pet.errBreed'),
+    name: name.trim() ? undefined : t(type === 'cat' ? 'pet.errNameCat' : 'pet.errNameDog'),
+    sex: sex ? undefined : t('pet.errSex'),
     age: knowsBirthDate
       ? birthDate
         ? undefined
-        : 'Enter a real date as DD.MM.YYYY, not in the future'
+        : t('pet.errDate')
       : !years && !months
-        ? 'Enter years or months'
+        ? t('pet.errAgeEmpty')
         : Number(years || 0) > MAX_YEARS || Number(months || 0) > 11
-          ? `Years up to ${MAX_YEARS}, months up to 11`
+          ? t('pet.errAgeRange', { y: MAX_YEARS })
           : approxAgeMonths === 0
-            ? 'Enter an age above 0'
+            ? t('pet.errAgeZero')
             : undefined,
   };
 
@@ -97,9 +98,9 @@ export default function PetDetailsScreen() {
 
   return (
     <FormScreen
-      eyebrow="Step 3 of 3"
-      title={`About your ${noun}`}
-      subtitle="Just the basics. You can change them later."
+      eyebrow={t('step', { n: 3 })}
+      title={t(type === 'cat' ? 'pet.titleCat' : 'pet.titleDog')}
+      subtitle={t('pet.subtitle')}
       onBack={() => setDraftPetType(null)}>
       <View style={styles.hero}>
         <View style={[styles.avatar, { backgroundColor: theme.primarySoft }]}>
@@ -119,8 +120,8 @@ export default function PetDetailsScreen() {
       <BreedField type={type} value={breed} onChange={setBreed} error={submitted ? errors.breed : undefined} />
 
       <TextField
-        label="Name"
-        placeholder={type === 'cat' ? 'e.g. Mila' : 'e.g. Bublyk'}
+        label={t('pet.name')}
+        placeholder={t(type === 'cat' ? 'pet.namePlaceholderCat' : 'pet.namePlaceholderDog')}
         value={name}
         onChangeText={setName}
         error={submitted ? errors.name : undefined}
@@ -129,7 +130,9 @@ export default function PetDetailsScreen() {
       />
 
       <View style={styles.group}>
-        <ThemedText type="smallBold">Sex</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          {t('pet.sex')}
+        </ThemedText>
         <View style={styles.row}>
           {(['male', 'female'] as const).map((option) => {
             const selected = sex === option;
@@ -149,7 +152,7 @@ export default function PetDetailsScreen() {
                 <ThemedText
                   type="smallBold"
                   style={{ color: selected ? theme.primaryText : theme.text, fontSize: 16 }}>
-                  {option === 'male' ? 'Male' : 'Female'}
+                  {t(option)}
                 </ThemedText>
               </Pressable>
             );
@@ -165,8 +168,8 @@ export default function PetDetailsScreen() {
       <View style={styles.group}>
         {knowsBirthDate ? (
           <TextField
-            label="Date of birth"
-            placeholder="DD.MM.YYYY"
+            label={t('pet.dob')}
+            placeholder={t('datePlaceholder')}
             value={birth}
             onChangeText={(text) => setBirth(formatBirthDate(text))}
             error={submitted ? errors.age : undefined}
@@ -175,11 +178,13 @@ export default function PetDetailsScreen() {
           />
         ) : (
           <>
-            <ThemedText type="smallBold">Approximate age</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('pet.approxAge')}
+            </ThemedText>
             <View style={styles.row}>
               <View style={styles.half}>
                 <TextField
-                  label="Years"
+                  label={t('pet.years')}
                   placeholder="0"
                   value={years}
                   onChangeText={(text) => setYears(digitsOnly(text))}
@@ -189,7 +194,7 @@ export default function PetDetailsScreen() {
               </View>
               <View style={styles.half}>
                 <TextField
-                  label="Months"
+                  label={t('pet.months')}
                   placeholder="0"
                   value={months}
                   onChangeText={(text) => setMonths(digitsOnly(text))}
@@ -210,14 +215,14 @@ export default function PetDetailsScreen() {
           onPress={() => setKnowsBirthDate((value) => !value)}
           style={styles.toggle}>
           <ThemedText type="smallBold" style={{ color: theme.primaryText }}>
-            {knowsBirthDate ? "I don't know the exact date" : 'I know the birth date'}
+            {knowsBirthDate ? t('pet.dontKnowDate') : t('pet.knowDate')}
           </ThemedText>
         </Pressable>
       </View>
 
       <TextField
-        label="Info (optional)"
-        placeholder={`Personality, favorite things, allergies, anything useful…`}
+        label={t('pet.info')}
+        placeholder={t('pet.infoPlaceholder')}
         value={bio}
         onChangeText={setBio}
         multiline
@@ -227,7 +232,7 @@ export default function PetDetailsScreen() {
       />
 
       <TextField
-        label="Instagram (optional)"
+        label={t('pet.instagram')}
         placeholder="@yourpet"
         value={instagram}
         onChangeText={setInstagram}
@@ -238,7 +243,7 @@ export default function PetDetailsScreen() {
       />
 
       {/* Inline, not pinned: a pinned button would leave almost no room above the keyboard. */}
-      <Button title="Finish" onPress={finish} />
+      <Button title={t('pet.finish')} onPress={finish} />
     </FormScreen>
   );
 }

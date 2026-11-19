@@ -7,7 +7,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BreedIcon } from '@/components/ui/breed-icon';
 import { Spacing } from '@/constants/theme';
-import { breedsFor } from '@/data/breeds';
+import { breedName, breedsFor } from '@/data/breeds';
+import { useI18n } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
 import type { PetType } from '@/providers/session';
 
@@ -22,13 +23,19 @@ type BreedFieldProps = {
 /** A field that opens a searchable list of breeds, with "use what I typed" as a fallback. */
 export function BreedField({ type, value, onChange, error }: BreedFieldProps) {
   const theme = useTheme();
+  const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
 
   const all = useMemo(() => breedsFor(type), [type]);
   const needle = query.trim().toLowerCase();
-  const matches = needle ? all.filter((entry) => entry.name.toLowerCase().includes(needle)) : all;
-  const exact = matches.some((entry) => entry.name.toLowerCase() === needle);
+  const matches = needle ? all.filter(
+        (entry) =>
+          entry.name.toLowerCase().includes(needle) || breedName(entry.name, lang).toLowerCase().includes(needle)
+      ) : all;
+  const exact = matches.some(
+    (entry) => entry.name.toLowerCase() === needle || breedName(entry.name, lang).toLowerCase() === needle
+  );
 
   function close() {
     setOpen(false);
@@ -42,10 +49,12 @@ export function BreedField({ type, value, onChange, error }: BreedFieldProps) {
 
   return (
     <View style={styles.wrapper}>
-      <ThemedText type="smallBold">Breed</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        {t('pet.breed')}
+      </ThemedText>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Breed: ${value || 'not chosen'}`}
+        accessibilityLabel={`${t('pet.breed')}: ${value ? breedName(value, lang) : '—'}`}
         onPress={() => setOpen(true)}
         style={[
           styles.field,
@@ -53,7 +62,7 @@ export function BreedField({ type, value, onChange, error }: BreedFieldProps) {
         ]}>
         {value ? <BreedIcon type={type} breed={value} size={32} /> : null}
         <ThemedText style={[styles.value, { color: value ? theme.text : theme.textSecondary }]} numberOfLines={1}>
-          {value || 'Choose breed'}
+          {value ? breedName(value, lang) : t('pet.chooseBreed')}
         </ThemedText>
         <SymbolView
           name={{ ios: 'chevron.down', android: 'expand_more', web: 'expand_more' }}
@@ -73,7 +82,7 @@ export function BreedField({ type, value, onChange, error }: BreedFieldProps) {
             <View style={styles.bar}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Close"
+                accessibilityLabel={t('close')}
                 hitSlop={8}
                 onPress={close}
                 style={[styles.close, { backgroundColor: theme.backgroundSelected }]}>
@@ -84,7 +93,7 @@ export function BreedField({ type, value, onChange, error }: BreedFieldProps) {
                 />
               </Pressable>
               <ThemedText type="smallBold" style={styles.title}>
-                Choose breed
+                {t('pet.chooseBreed')}
               </ThemedText>
               <View style={styles.close} />
             </View>
@@ -97,10 +106,10 @@ export function BreedField({ type, value, onChange, error }: BreedFieldProps) {
                 size={18}
               />
               <TextInput
-                aria-label="Search breeds"
+                aria-label={t('pet.searchBreeds')}
                 value={query}
                 onChangeText={setQuery}
-                placeholder="Search breeds"
+                placeholder={t('pet.searchBreeds')}
                 placeholderTextColor={theme.textSecondary}
                 autoCorrect={false}
                 style={[styles.input, { color: theme.text }]}
@@ -122,7 +131,7 @@ export function BreedField({ type, value, onChange, error }: BreedFieldProps) {
                     size={20}
                   />
                   <ThemedText type="smallBold" style={[styles.rowText, { color: theme.primaryText }]}>
-                    Use “{query.trim()}”
+                    {t('pet.useTyped', { name: query.trim() })}
                   </ThemedText>
                 </Pressable>
               ) : null}
@@ -143,7 +152,7 @@ export function BreedField({ type, value, onChange, error }: BreedFieldProps) {
                     <ThemedText
                       type={selected ? 'smallBold' : 'default'}
                       style={[styles.rowText, selected && { color: theme.primaryText }]}>
-                      {item}
+                      {breedName(item, lang)}
                     </ThemedText>
                     {selected && (
                       <SymbolView

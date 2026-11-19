@@ -5,21 +5,22 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { SymbolIcon } from '@/components/ui/symbol-icon';
 import { Button } from '@/components/ui/button';
-import { Spacing } from '@/constants/theme';
+import { Segmented } from '@/components/ui/choice';
+import { Spacing, TAB_BAR_SPACE } from '@/constants/theme';
+import { useI18n, type Lang } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
-import { useSession, type AuthMethod } from '@/providers/session';
-
-const METHOD: Record<AuthMethod, string> = { apple: 'Apple', google: 'Google', email: 'Email' };
+import { useSession } from '@/providers/session';
 
 /** Settings tab: who is signed in, and sign out. */
 export default function SettingsScreen() {
   const theme = useTheme();
   const { session, signOut } = useSession();
+  const { t, lang, setLang } = useI18n();
 
   const rows: { label: string; value: string; ios: string; material: string }[] = [
-    { label: 'Name', value: session?.ownerName ?? '', ios: 'person', material: 'person' },
-    { label: 'Email', value: session?.email ?? '', ios: 'envelope', material: 'mail' },
-    { label: 'Signed in with', value: session ? METHOD[session.method] : '', ios: 'key', material: 'key' },
+    { label: t('settings.name'), value: session?.ownerName ?? '', ios: 'person', material: 'person' },
+    { label: t('settings.email'), value: session?.email ?? '', ios: 'envelope', material: 'mail' },
+    { label: t('settings.signedInWith'), value: session ? t(`method.${session.method}` as const) : '', ios: 'key', material: 'key' },
   ];
 
   return (
@@ -27,11 +28,11 @@ export default function SettingsScreen() {
       <SafeAreaView style={styles.root} edges={['top']}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.content}>
-            <ThemedText type="subtitle">Settings</ThemedText>
+            <ThemedText type="subtitle">{t('settings.title')}</ThemedText>
 
             <View style={styles.section}>
               <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionTitle}>
-                Account
+                {t('settings.account')}
               </ThemedText>
               <View>
                 {rows.map(({ label, value, ios, material }, index) => (
@@ -50,7 +51,21 @@ export default function SettingsScreen() {
               </View>
             </View>
 
-            <Button variant="outline" title="Sign out" onPress={signOut} />
+            <View style={styles.section}>
+              <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionTitle}>
+                {t('settings.language')}
+              </ThemedText>
+              <Segmented<Lang>
+                value={lang}
+                onChange={setLang}
+                options={[
+                  { value: 'uk', label: t('lang.uk') },
+                  { value: 'en', label: t('lang.en') },
+                ]}
+              />
+            </View>
+
+            <Button variant="outline" title={t('settings.signOut')} onPress={signOut} />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -60,7 +75,7 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { flexGrow: 1, paddingHorizontal: Spacing.four, paddingVertical: Spacing.four },
+  scroll: { flexGrow: 1, paddingHorizontal: Spacing.four, paddingTop: Spacing.four, paddingBottom: TAB_BAR_SPACE },
   content: { width: '100%', maxWidth: 460, alignSelf: 'center', gap: Spacing.four },
   section: { gap: Spacing.two },
   sectionTitle: { fontSize: 14 },

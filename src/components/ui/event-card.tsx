@@ -3,7 +3,8 @@ import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { SymbolIcon } from '@/components/ui/symbol-icon';
 import { Spacing } from '@/constants/theme';
-import { KIND_COLORS, KIND_ICONS, kindLabel } from '@/lib/event-kinds';
+import { useI18n } from '@/i18n';
+import { KIND_COLORS, KIND_ICONS, kindKey } from '@/lib/event-kinds';
 import type { PetEvent } from '@/providers/session';
 
 type EventCardProps = {
@@ -16,6 +17,7 @@ type EventCardProps = {
 
 /** An event as a soft pastel card tinted with its kind's color. */
 export function EventCard({ event, when, variant = 'wide' }: EventCardProps) {
+  const { t } = useI18n();
   const color = KIND_COLORS[event.kind];
   const tint = `${color}33`;
 
@@ -27,7 +29,7 @@ export function EventCard({ event, when, variant = 'wide' }: EventCardProps) {
   const title = <ThemedText style={styles.title} numberOfLines={2}>{event.title}</ThemedText>;
   const kind = (
     <ThemedText type="small" style={styles.muted}>
-      {kindLabel(event.kind)}
+      {t(kindKey(event.kind))}
     </ThemedText>
   );
   const whenText = when ? (

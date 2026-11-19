@@ -17,7 +17,8 @@ import {
   parseDateInput,
   todayIso,
 } from '@/lib/dates';
-import { EVENT_KINDS, KIND_ICONS } from '@/lib/event-kinds';
+import { EVENT_KIND_ORDER, KIND_ICONS, kindKey } from '@/lib/event-kinds';
+import { useI18n } from '@/i18n';
 import { useSession, type EventKind } from '@/providers/session';
 
 /** Add an event to the calendar: what, which kind, which day and (optionally) what time. */
@@ -25,6 +26,7 @@ export default function AddEventScreen() {
   const router = useRouter();
   const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
   const { addEvent } = useSession();
+  const { t } = useI18n();
 
   const [title, setTitle] = useState('');
   const [kind, setKind] = useState<EventKind>('vet');
@@ -34,9 +36,9 @@ export default function AddEventScreen() {
 
   const date = parseDateInput(dateText);
   const errors = {
-    title: title.trim() ? undefined : 'Enter a title',
-    date: date ? undefined : 'Enter a real date as DD.MM.YYYY',
-    time: !time || isValidTime(time) ? undefined : 'Use 24-hour time, e.g. 09:30',
+    title: title.trim() ? undefined : t('event.errTitle'),
+    date: date ? undefined : t('event.errDate'),
+    time: !time || isValidTime(time) ? undefined : t('event.errTime'),
   };
 
   function save() {
@@ -47,10 +49,10 @@ export default function AddEventScreen() {
   }
 
   return (
-    <FormScreen title="New event" sheet>
+    <FormScreen title={t('event.title')} sheet>
       <TextField
-        label="Title"
-        placeholder="e.g. Annual check-up"
+        label={t('event.titleLabel')}
+        placeholder={t('event.titlePlaceholder')}
         value={title}
         onChangeText={setTitle}
         error={submitted ? errors.title : undefined}
@@ -58,11 +60,14 @@ export default function AddEventScreen() {
       />
 
       <View style={{ gap: Spacing.two }}>
-        <ThemedText type="smallBold">Type</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          {t('event.type')}
+        </ThemedText>
         <ChoiceChips
-          options={EVENT_KINDS.map((item) => ({
-            ...item,
-            icon: (color) => <SymbolIcon {...KIND_ICONS[item.value]} color={color} size={16} />,
+          options={EVENT_KIND_ORDER.map((value) => ({
+            value,
+            label: t(kindKey(value)),
+            icon: (color) => <SymbolIcon {...KIND_ICONS[value]} color={color} size={16} />,
           }))}
           value={kind}
           onChange={setKind}
@@ -70,8 +75,8 @@ export default function AddEventScreen() {
       </View>
 
       <TextField
-        label="Date"
-        placeholder="DD.MM.YYYY"
+        label={t('event.date')}
+        placeholder={t('datePlaceholder')}
         value={dateText}
         onChangeText={(text) => setDateText(formatDateInput(text))}
         error={submitted ? errors.date : undefined}
@@ -80,7 +85,7 @@ export default function AddEventScreen() {
       />
 
       <TextField
-        label="Time (optional)"
+        label={t('event.time')}
         placeholder="HH:MM"
         value={time}
         onChangeText={(text) => setTime(formatTimeInput(text))}
@@ -90,7 +95,7 @@ export default function AddEventScreen() {
       />
 
       {/* Inline, not pinned: in a sheet the keyboard would cover a pinned footer. */}
-      <Button title="Save event" onPress={save} />
+      <Button title={t('event.save')} onPress={save} />
     </FormScreen>
   );
 }

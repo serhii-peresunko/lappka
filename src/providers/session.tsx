@@ -1,3 +1,5 @@
+import type { StringKey } from '@/i18n/en';
+import { useI18n } from '@/i18n';
 import { createContext, useCallback, useContext, useMemo, useState, type PropsWithChildren } from 'react';
 
 export type AuthMethod = 'apple' | 'google' | 'email';
@@ -60,36 +62,36 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 // Sign in = an existing account (already has a name and a pet); sign up = a new, empty one.
 const wait = (ms = 500) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const DEMO_PET: Pet = {
+const demoPet = (name: string): Pet => ({
   type: 'dog',
-  name: 'Bublyk',
+  name,
   sex: 'male',
   birthDate: '2023-04-12',
   approxAgeMonths: null,
   breed: 'Cocker Spaniel',
   bio: '',
   instagram: 'bublyk_demo',
-};
+});
 
 /** A few events around today for the demo account, one of every kind, so the calendar has something to show. */
-function demoEvents(): PetEvent[] {
+function demoEvents(titles: string[]): PetEvent[] {
   const day = (offset: number) => {
     const date = new Date();
     date.setDate(date.getDate() + offset);
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   };
   const list: [number, EventKind, string, string | null][] = [
-    [0, 'vet', 'Annual check-up', '10:00'],
-    [0, 'vaccine', 'Rabies shot', '10:30'],
-    [0, 'grooming', 'Haircut', '15:00'],
-    [0, 'medication', 'Flea & tick pill', '20:00'],
-    [0, 'other', 'Puppy training', null],
-    [2, 'vet', 'Dental cleaning', '09:00'],
-    [4, 'vaccine', 'Booster', '11:00'],
-    [4, 'grooming', 'Nail trim', '12:00'],
-    [7, 'medication', 'Deworming', null],
-    [-3, 'other', 'Dog park meetup', '18:00'],
-    [-5, 'vet', 'Limping check', '16:30'],
+    [0, 'vet', titles[0], '10:00'],
+    [0, 'vaccine', titles[1], '10:30'],
+    [0, 'grooming', titles[2], '15:00'],
+    [0, 'medication', titles[3], '20:00'],
+    [0, 'other', titles[4], null],
+    [2, 'vet', titles[5], '09:00'],
+    [4, 'vaccine', titles[6], '11:00'],
+    [4, 'grooming', titles[7], '12:00'],
+    [7, 'medication', titles[8], null],
+    [-3, 'other', titles[9], '18:00'],
+    [-5, 'vet', titles[10], '16:30'],
   ];
   return list.map(([offset, kind, title, time], index) => ({ id: `demo-${index}`, kind, title, time, date: day(offset) }));
 }
@@ -100,15 +102,16 @@ function emailFor(method: AuthMethod, email: string | undefined, isNew: boolean)
 }
 
 export function SessionProvider({ children }: PropsWithChildren) {
+  const { t } = useI18n();
   const [session, setSession] = useState<Session | null>(null);
   const [draftPetType, setDraftPetType] = useState<PetType | null>(null);
   const [events, setEvents] = useState<PetEvent[]>([]);
 
   const signIn = useCallback(async (method: AuthMethod, email?: string) => {
     await wait();
-    setSession({ method, email: emailFor(method, email, false), ownerName: 'Alex', pet: DEMO_PET });
-    setEvents(demoEvents());
-  }, []);
+    setSession({ method, email: emailFor(method, email, false), ownerName: t('demo.owner'), pet: demoPet(t('demo.pet')) });
+    setEvents(demoEvents(Array.from({ length: 11 }, (_, i) => t(`demo.e${i}` as StringKey))));
+  }, [t]);
 
   const signUp = useCallback(async (method: AuthMethod, email?: string) => {
     await wait();

@@ -1,5 +1,5 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
+ * Below are the colors that are used in the app. The app is light only.
  * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://unistyl.es/), etc.
  */
 
@@ -22,22 +22,12 @@ export const Colors = {
     primarySoft: '#FDE9DA',
     danger: '#C62828',
   },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-    border: '#3A3D42',
-    primary: '#FF8E3C',
-    primaryText: '#FF8E3C',
-    onPrimary: '#1A1206',
-    primarySoft: '#3A2416',
-    danger: '#FF6B6B',
-  },
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+/** Bottom space a scroll view needs so its last item clears the floating tab bar. */
+export const TAB_BAR_SPACE = 120;
+
+export type ThemeColor = keyof typeof Colors.light;
 
 export const Fonts = Platform.select({
   ios: {

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { FormScreen } from '@/components/ui/form-screen';
 import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
+import { useI18n } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { useSession, type AuthMethod } from '@/providers/session';
 
@@ -20,6 +21,7 @@ const MIN_PASSWORD = 8;
 export default function AuthScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useI18n();
   const params = useLocalSearchParams<{ mode?: string }>();
   const { signIn, signUp } = useSession();
   const passwordRef = useRef<TextInputInstance>(null);
@@ -32,11 +34,15 @@ export default function AuthScreen() {
 
   const isSignUp = mode === 'sign-up';
 
-  const emailError = !email.trim() ? 'Enter your email' : !EMAIL.test(email.trim()) ? 'Enter a valid email' : undefined;
+  const emailError = !email.trim()
+    ? t('auth.errEmailEmpty')
+    : !EMAIL.test(email.trim())
+      ? t('auth.errEmailInvalid')
+      : undefined;
   const passwordError = !password
-    ? 'Enter your password'
+    ? t('auth.errPasswordEmpty')
     : isSignUp && password.length < MIN_PASSWORD
-      ? `Use at least ${MIN_PASSWORD} characters`
+      ? t('auth.errPasswordShort', { n: MIN_PASSWORD })
       : undefined;
 
   async function run(method: AuthMethod, withEmail?: string) {
@@ -44,7 +50,7 @@ export default function AuthScreen() {
     try {
       await (isSignUp ? signUp(method, withEmail) : signIn(method, withEmail));
     } catch {
-      Alert.alert('Something went wrong', 'Please try again.');
+      Alert.alert(t('auth.failedTitle'), t('auth.failedBody'));
     } finally {
       setPending(null);
     }
@@ -56,18 +62,16 @@ export default function AuthScreen() {
     run('email', email.trim());
   }
 
-  const verb = isSignUp ? 'Sign up' : 'Continue';
-
   return (
     <FormScreen
       bottom
       onBack={() => router.back()}
-      title={isSignUp ? 'Create your account' : 'Welcome back'}
-      subtitle="Keep your dog's care in one place.">
+      title={isSignUp ? t('auth.titleSignUp') : t('auth.titleSignIn')}
+      subtitle={t('auth.subtitle')}>
       <View style={styles.group}>
         <TextField
-          label="Email"
-          placeholder="you@example.com"
+          label={t('auth.email')}
+          placeholder={t('auth.emailPlaceholder')}
           value={email}
           onChangeText={setEmail}
           error={submitted ? emailError : undefined}
@@ -80,8 +84,8 @@ export default function AuthScreen() {
         />
         <TextField
           ref={passwordRef}
-          label="Password"
-          placeholder={isSignUp ? `At least ${MIN_PASSWORD} characters` : 'Your password'}
+          label={t('auth.password')}
+          placeholder={isSignUp ? t('auth.passwordPlaceholderUp', { n: MIN_PASSWORD }) : t('auth.passwordPlaceholderIn')}
           value={password}
           onChangeText={setPassword}
           error={submitted ? passwordError : undefined}
@@ -94,7 +98,7 @@ export default function AuthScreen() {
           onSubmitEditing={submit}
         />
         <Button
-          title={isSignUp ? 'Create account' : 'Sign in'}
+          title={isSignUp ? t('auth.createAccount') : t('auth.signIn')}
           loading={pending === 'email'}
           disabled={pending !== null}
           onPress={submit}
@@ -104,7 +108,7 @@ export default function AuthScreen() {
       <View style={styles.divider}>
         <View style={[styles.line, { backgroundColor: theme.border }]} />
         <ThemedText type="small" themeColor="textSecondary">
-          or
+          {t('or')}
         </ThemedText>
         <View style={[styles.line, { backgroundColor: theme.border }]} />
       </View>
@@ -114,7 +118,7 @@ export default function AuthScreen() {
         {Platform.OS !== 'android' && (
           <Button
             variant="dark"
-            title={`${verb} with Apple`}
+            title={isSignUp ? t('auth.appleUp') : t('auth.appleIn')}
             icon={
               <SymbolView name={{ ios: 'apple.logo' }} tintColor={theme.background} size={18} fallback={<View />} />
             }
@@ -125,7 +129,7 @@ export default function AuthScreen() {
         )}
         <Button
           variant="outline"
-          title={`${verb} with Google`}
+          title={isSignUp ? t('auth.googleUp') : t('auth.googleIn')}
           loading={pending === 'google'}
           disabled={pending !== null}
           onPress={() => run('google')}
@@ -140,9 +144,9 @@ export default function AuthScreen() {
         }}
         style={styles.switch}>
         <ThemedText type="small" themeColor="textSecondary">
-          {isSignUp ? 'Already have an account? ' : 'New here? '}
+          {isSignUp ? t('auth.hasAccount') : t('auth.newHere')}
           <ThemedText type="smallBold" style={{ color: theme.primaryText }}>
-            {isSignUp ? 'Sign in' : 'Create account'}
+            {isSignUp ? t('auth.signIn') : t('auth.createAccount')}
           </ThemedText>
         </ThemedText>
       </Pressable>

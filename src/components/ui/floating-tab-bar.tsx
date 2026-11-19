@@ -1,157 +1,112 @@
-import { useRouter, type Tabs } from "expo-router";
-import { SymbolView } from "expo-symbols";
-import type { ComponentProps } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BlurView } from 'expo-blur';
+import { useRouter, type Tabs } from 'expo-router';
+import type { ComponentProps } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Spacing } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
+import { SymbolIcon } from '@/components/ui/symbol-icon';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { useI18n } from '@/i18n';
+import type { StringKey } from '@/i18n/en';
 
-type TabBarProps = Parameters<
-  NonNullable<ComponentProps<typeof Tabs>["tabBar"]>
->[0];
+type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];
 
-const ITEMS: Record<string, { label: string; ios: string; material: string }> =
-  {
-    index: { label: "Home", ios: "house.fill", material: "home" },
-    calendar: {
-      label: "Calendar",
-      ios: "calendar",
-      material: "calendar_month",
-    },
-    id: {
-      label: "Pet ID",
-      ios: "person.text.rectangle.fill",
-      material: "badge",
-    },
-    settings: {
-      label: "Settings",
-      ios: "gearshape.fill",
-      material: "settings",
-    },
-  };
+const ITEMS: Record<string, { label: StringKey; ios: string; material: string }> = {
+  index: { label: 'tab.home', ios: 'house.fill', material: 'home' },
+  calendar: { label: 'tab.calendar', ios: 'calendar', material: 'calendar_month' },
+  id: { label: 'tab.petId', ios: 'person.text.rectangle.fill', material: 'badge' },
+  settings: { label: 'tab.settings', ios: 'gearshape.fill', material: 'settings' },
+};
 
 /**
- * A floating, rounded tab bar: icons only, the active tab sits in a soft pill,
- * and the middle button opens the Add event form instead of switching tabs.
+ * A floating frosted-glass tab bar: it blurs whatever scrolls underneath it, shows icons only,
+ * marks the active tab with a soft pill, and the middle button opens the Add event form.
  */
 export function FloatingTabBar({ state, emitter, navigateToTab }: TabBarProps) {
   const theme = useTheme();
   const router = useRouter();
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
 
   return (
     <View
-      style={[
-        styles.wrap,
-        {
-          backgroundColor: theme.background,
-          paddingBottom: Math.max(insets.bottom, Spacing.three),
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.bar,
-          { backgroundColor: theme.background, borderColor: theme.border },
-        ]}
-      >
-        {state.routes.map((route, index) => {
-          if (route.name === "add") {
+      pointerEvents="box-none"
+      style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, Spacing.three) }]}>
+      <View style={styles.shadow}>
+        <View style={styles.bar}>
+          <BlurView intensity={55} tint="light" style={StyleSheet.absoluteFill} />
+          <View style={styles.tint} pointerEvents="none" />
+
+          {state.routes.map((route, index) => {
+            if (route.name === 'add') {
+              return (
+                <View key={route.key} style={styles.slot}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t('tab.add')}
+                    onPress={() => router.push('/add-event')}
+                    style={({ pressed }) => [styles.add, { backgroundColor: theme.text }, pressed && { opacity: 0.85 }]}>
+                    <SymbolIcon ios="plus" material="add" color={theme.background} size={24} />
+                  </Pressable>
+                </View>
+              );
+            }
+
+            const item = ITEMS[route.name];
+            if (!item) return null;
+            const focused = state.index === index;
+
             return (
               <View key={route.key} style={styles.slot}>
                 <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Add event"
-                  onPress={() => router.push("/add-event")}
-                  style={({ pressed }) => [
-                    styles.add,
-                    { backgroundColor: theme.text },
-                    pressed && { opacity: 0.85 },
-                  ]}
-                >
-                  <SymbolView
-                    name={{ ios: "plus", android: "add", web: "add" }}
-                    tintColor={theme.background}
-                    size={24}
-                    weight="semibold"
+                  accessibilityRole="tab"
+                  accessibilityLabel={t(item.label)}
+                  accessibilityState={{ selected: focused }}
+                  onPress={() => {
+                    const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                    if (!focused && !event.defaultPrevented) navigateToTab(route.key);
+                  }}
+                  style={[styles.item, focused && { backgroundColor: 'rgba(0,0,0,0.07)' }]}>
+                  <SymbolIcon
+                    ios={item.ios}
+                    material={item.material}
+                    color={focused ? theme.text : theme.textSecondary}
+                    size={22}
                   />
                 </Pressable>
               </View>
             );
-          }
-
-          const item = ITEMS[route.name];
-          if (!item) return null;
-          const focused = state.index === index;
-          const color = focused ? theme.text : theme.textSecondary;
-
-          return (
-            <View key={route.key} style={styles.slot}>
-              <Pressable
-                accessibilityRole="tab"
-                accessibilityLabel={item.label}
-                accessibilityState={{ selected: focused }}
-                onPress={() => {
-                  const event = emitter.emit({
-                    type: "tabPress",
-                    target: route.key,
-                    canPreventDefault: true,
-                  });
-                  if (!focused && !event.defaultPrevented)
-                    navigateToTab(route.key);
-                }}
-                style={[
-                  styles.item,
-                  focused && { backgroundColor: theme.backgroundElement },
-                ]}
-              >
-                <SymbolView
-                  name={{
-                    ios: item.ios as never,
-                    android: item.material as never,
-                    web: item.material as never,
-                  }}
-                  tintColor={color}
-                  size={22}
-                />
-              </Pressable>
-            </View>
-          );
-        })}
+          })}
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: Spacing.three, paddingTop: Spacing.two },
-  bar: {
-    flexDirection: "row",
-    alignItems: "center",
-    height: 68,
+  // Absolute, so the page scrolls underneath and shows through the blur.
+  wrap: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: Spacing.three },
+  shadow: {
     borderRadius: 34,
-    borderWidth: StyleSheet.hairlineWidth,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
     elevation: 8,
   },
+  bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 68,
+    borderRadius: 34,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.7)',
+  },
+  tint: { ...(StyleSheet.absoluteFill as object), backgroundColor: 'rgba(255,255,255,0.55)' },
   // Every button gets an equal-width slot, so the icons are evenly spaced and the + is dead centre.
-  slot: { flex: 1, alignItems: "center", justifyContent: "center" },
-  item: {
-    height: 48,
-    width: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  add: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  slot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  item: { height: 48, width: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  add: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
 });

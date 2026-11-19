@@ -1,3 +1,5 @@
+import { pluralUk, type Lang } from '@/i18n';
+
 /** Local-time date helpers; ISO day strings are YYYY-MM-DD in the device's time zone. */
 
 export const toIso = (date: Date) =>
@@ -43,8 +45,8 @@ export function monthGrid(year: number, month: number) {
   });
 }
 
-/** "2 years 3 months", "5 months"; for a birth date it counts from today, for an estimate it uses the months given. */
-export function ageText(birthDate: string | null, approxMonths: number | null): string {
+/** "2 years 3 months" / "2 роки 3 місяці"; for a birth date it counts from today, for an estimate it uses the months given. */
+export function ageText(birthDate: string | null, approxMonths: number | null, lang: Lang = 'uk'): string {
   let months = approxMonths ?? 0;
   if (birthDate) {
     const [y, m, d] = birthDate.split('-').map(Number);
@@ -54,9 +56,15 @@ export function ageText(birthDate: string | null, approxMonths: number | null): 
   months = Math.max(months, 0);
   const years = Math.floor(months / 12);
   const rest = months % 12;
+
+  const yearWord = (n: number) =>
+    lang === 'uk' ? pluralUk(n, 'рік', 'роки', 'років') : n === 1 ? 'year' : 'years';
+  const monthWord = (n: number) =>
+    lang === 'uk' ? pluralUk(n, 'місяць', 'місяці', 'місяців') : n === 1 ? 'month' : 'months';
+
   const parts = [
-    years ? `${years} ${years === 1 ? 'year' : 'years'}` : '',
-    rest || !years ? `${rest} ${rest === 1 ? 'month' : 'months'}` : '',
+    years ? `${years} ${yearWord(years)}` : '',
+    rest || !years ? `${rest} ${monthWord(rest)}` : '',
   ].filter(Boolean);
   return (approxMonths !== null && !birthDate ? '~' : '') + parts.join(' ');
 }

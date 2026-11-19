@@ -8,27 +8,26 @@ import { Button } from '@/components/ui/button';
 import { FormScreen } from '@/components/ui/form-screen';
 import { PetArt } from '@/components/ui/pet-art';
 import { Spacing } from '@/constants/theme';
+import { useI18n } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { useSession, type PetType } from '@/providers/session';
 
-const OPTIONS: { type: PetType; label: string }[] = [
-  { type: 'dog', label: 'Dog' },
-  { type: 'cat', label: 'Cat' },
-];
+const OPTIONS: PetType[] = ['dog', 'cat'];
 
 /** Step 2: who are we adding? Two big cards; tap one, then continue. */
 export default function PetTypeScreen() {
   const { setDraftPetType } = useSession();
+  const { t } = useI18n();
   const [selected, setSelected] = useState<PetType | null>(null);
 
   return (
     <FormScreen
-      eyebrow="Step 2 of 3"
-      title="Who are you adding?"
-      subtitle="Choose your pet. More pet types are coming soon."
+      eyebrow={t('step', { n: 2 })}
+      title={t('petType.title')}
+      subtitle={t('petType.subtitle')}
       footer={
         <Button
-          title="Continue"
+          title={t('continue')}
           disabled={!selected}
           onPress={() => selected && setDraftPetType(selected)}
         />
@@ -36,11 +35,11 @@ export default function PetTypeScreen() {
       <View style={styles.row}>
         {OPTIONS.map((option) => (
           <PetCard
-            key={option.type}
-            type={option.type}
-            label={option.label}
-            selected={selected === option.type}
-            onPress={() => setSelected(option.type)}
+            key={option}
+            type={option}
+            label={t(option)}
+            selected={selected === option}
+            onPress={() => setSelected(option)}
           />
         ))}
       </View>

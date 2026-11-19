@@ -5,11 +5,12 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useI18n } from '@/i18n';
 import { monthGrid, todayIso } from '@/lib/dates';
 
 const DOTS_PER_ROW = 4;
 const MAX_DOTS = DOTS_PER_ROW * 2;
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const WEEKDAY_KEYS = ['cal.wd0', 'cal.wd1', 'cal.wd2', 'cal.wd3', 'cal.wd4', 'cal.wd5', 'cal.wd6'] as const;
 
 type MonthCalendarProps = {
   /** Selected day, YYYY-MM-DD. */
@@ -22,13 +23,14 @@ type MonthCalendarProps = {
 /** A month grid with prev / next, a highlighted today and a dot under days with events. */
 export function MonthCalendar({ selected, onSelect, dotsByDay }: MonthCalendarProps) {
   const theme = useTheme();
+  const { t, locale } = useI18n();
   const [view, setView] = useState(() => {
     const [y, m] = selected.split('-').map(Number);
     return { year: y, month: m - 1 };
   });
   const today = todayIso();
   const cells = monthGrid(view.year, view.month);
-  const title = new Date(view.year, view.month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const title = new Date(view.year, view.month, 1).toLocaleDateString(locale, { month: 'long', year: 'numeric' });
 
   const shift = (delta: number) => {
     const next = new Date(view.year, view.month + delta, 1);
@@ -38,21 +40,21 @@ export function MonthCalendar({ selected, onSelect, dotsByDay }: MonthCalendarPr
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => shift(-1)} style={styles.nav}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('calendar.prev')} onPress={() => shift(-1)} style={styles.nav}>
           <SymbolView name={{ ios: 'chevron.left', android: 'chevron_left', web: 'chevron_left' }} tintColor={theme.text} size={18} />
         </Pressable>
         <ThemedText type="smallBold" style={styles.title}>
           {title}
         </ThemedText>
-        <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => shift(1)} style={styles.nav}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('calendar.next')} onPress={() => shift(1)} style={styles.nav}>
           <SymbolView name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }} tintColor={theme.text} size={18} />
         </Pressable>
       </View>
 
       <View style={styles.week}>
-        {WEEKDAYS.map((name) => (
-          <ThemedText key={name} type="small" themeColor="textSecondary" style={styles.weekday}>
-            {name}
+        {WEEKDAY_KEYS.map((key) => (
+          <ThemedText key={key} type="small" themeColor="textSecondary" style={styles.weekday}>
+            {t(key)}
           </ThemedText>
         ))}
       </View>

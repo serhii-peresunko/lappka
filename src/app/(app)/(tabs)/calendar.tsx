@@ -6,7 +6,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { EventCard } from '@/components/ui/event-card';
 import { MonthCalendar } from '@/components/ui/month-calendar';
-import { Spacing } from '@/constants/theme';
+import { Spacing, TAB_BAR_SPACE } from '@/constants/theme';
+import { useI18n } from '@/i18n';
 import { KIND_COLORS } from '@/lib/event-kinds';
 import { todayIso } from '@/lib/dates';
 import { useSession } from '@/providers/session';
@@ -14,6 +15,7 @@ import { useSession } from '@/providers/session';
 /** Calendar tab: a month calendar and the events of the chosen day. Events are added from the middle tab button. */
 export default function CalendarScreen() {
   const { events } = useSession();
+  const { t, locale } = useI18n();
   const [selected, setSelected] = useState(todayIso);
 
   const dotsByDay = useMemo(() => {
@@ -28,18 +30,19 @@ export default function CalendarScreen() {
         .sort((a, b) => (a.time ?? '').localeCompare(b.time ?? '')),
     [events, selected]
   );
-  const dayTitle = new Date(`${selected}T12:00:00`).toLocaleDateString('en-US', {
+  const dayRaw = new Date(`${selected}T12:00:00`).toLocaleDateString(locale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
   });
+  const dayTitle = dayRaw.charAt(0).toUpperCase() + dayRaw.slice(1);
 
   return (
     <ThemedView style={styles.root}>
       <SafeAreaView style={styles.root} edges={['top']}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.content}>
-            <ThemedText type="subtitle">Calendar</ThemedText>
+            <ThemedText type="subtitle">{t('calendar.title')}</ThemedText>
 
             <MonthCalendar selected={selected} onSelect={setSelected} dotsByDay={dotsByDay} />
 
@@ -48,7 +51,7 @@ export default function CalendarScreen() {
                 {dayTitle}
               </ThemedText>
               {dayEvents.length === 0 ? (
-                <ThemedText themeColor="textSecondary">Nothing planned for this day.</ThemedText>
+                <ThemedText themeColor="textSecondary">{t('calendar.empty')}</ThemedText>
               ) : (
                 dayEvents.map((event) => (
                   <EventCard key={event.id} event={event} when={event.time ?? undefined} />
@@ -66,7 +69,7 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
-  scroll: { flexGrow: 1, paddingHorizontal: Spacing.four, paddingVertical: Spacing.four },
+  scroll: { flexGrow: 1, paddingHorizontal: Spacing.four, paddingTop: Spacing.four, paddingBottom: TAB_BAR_SPACE },
   content: { width: '100%', maxWidth: 460, alignSelf: 'center', gap: Spacing.four },
   events: { gap: Spacing.three },
   dayTitle: { fontSize: 14 },

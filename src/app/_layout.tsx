@@ -1,6 +1,6 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 
+import { I18nProvider } from '@/i18n';
 import { SessionProvider, useSession } from '@/providers/session';
 
 /**
@@ -36,12 +36,13 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <SessionProvider>
-        <RootNavigator />
-      </SessionProvider>
+    <ThemeProvider value={DefaultTheme}>
+      <I18nProvider>
+        <SessionProvider>
+          <RootNavigator />
+        </SessionProvider>
+      </I18nProvider>
     </ThemeProvider>
   );
 }
