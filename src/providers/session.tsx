@@ -19,6 +19,18 @@ export type Pet = {
   bio: string;
 };
 
+export type EventKind = 'vet' | 'vaccine' | 'grooming' | 'medication' | 'other';
+
+export type PetEvent = {
+  id: string;
+  title: string;
+  kind: EventKind;
+  /** Local calendar day, YYYY-MM-DD. */
+  date: string;
+  /** HH:MM, or null for an all-day event. */
+  time: string | null;
+};
+
 type Session = {
   method: AuthMethod;
   email: string;
@@ -35,6 +47,8 @@ type SessionContextValue = {
   signUp: (method: AuthMethod, email?: string) => Promise<void>;
   saveOwnerName: (name: string) => void;
   savePet: (pet: Pet) => void;
+  events: PetEvent[];
+  addEvent: (event: Omit<PetEvent, 'id'>) => void;
   signOut: () => void;
 };
 
@@ -54,6 +68,29 @@ const DEMO_PET: Pet = {
   bio: '',
 };
 
+/** A few events around today for the demo account, one of every kind, so the calendar has something to show. */
+function demoEvents(): PetEvent[] {
+  const day = (offset: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+  const list: [number, EventKind, string, string | null][] = [
+    [0, 'vet', 'Annual check-up', '10:00'],
+    [0, 'vaccine', 'Rabies shot', '10:30'],
+    [0, 'grooming', 'Haircut', '15:00'],
+    [0, 'medication', 'Flea & tick pill', '20:00'],
+    [0, 'other', 'Puppy training', null],
+    [2, 'vet', 'Dental cleaning', '09:00'],
+    [4, 'vaccine', 'Booster', '11:00'],
+    [4, 'grooming', 'Nail trim', '12:00'],
+    [7, 'medication', 'Deworming', null],
+    [-3, 'other', 'Dog park meetup', '18:00'],
+    [-5, 'vet', 'Limping check', '16:30'],
+  ];
+  return list.map(([offset, kind, title, time], index) => ({ id: `demo-${index}`, kind, title, time, date: day(offset) }));
+}
+
 function emailFor(method: AuthMethod, email: string | undefined, isNew: boolean) {
   if (email) return email;
   return `${isNew ? 'new.' : ''}${method}.user@example.com`;
@@ -62,10 +99,12 @@ function emailFor(method: AuthMethod, email: string | undefined, isNew: boolean)
 export function SessionProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [draftPetType, setDraftPetType] = useState<PetType | null>(null);
+  const [events, setEvents] = useState<PetEvent[]>([]);
 
   const signIn = useCallback(async (method: AuthMethod, email?: string) => {
     await wait();
     setSession({ method, email: emailFor(method, email, false), ownerName: 'Alex', pet: DEMO_PET });
+    setEvents(demoEvents());
   }, []);
 
   const signUp = useCallback(async (method: AuthMethod, email?: string) => {
@@ -81,14 +120,19 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setSession((current) => (current ? { ...current, pet } : current));
   }, []);
 
+  const addEvent = useCallback((event: Omit<PetEvent, 'id'>) => {
+    setEvents((current) => [...current, { ...event, id: `${Date.now()}-${current.length}` }]);
+  }, []);
+
   const signOut = useCallback(() => {
     setSession(null);
+    setEvents([]);
     setDraftPetType(null);
   }, []);
 
   const value = useMemo(
-    () => ({ session, draftPetType, setDraftPetType, signIn, signUp, saveOwnerName, savePet, signOut }),
-    [session, draftPetType, signIn, signUp, saveOwnerName, savePet, signOut]
+    () => ({ session, draftPetType, setDraftPetType, signIn, signUp, saveOwnerName, savePet, events, addEvent, signOut }),
+    [session, draftPetType, signIn, signUp, saveOwnerName, savePet, events, addEvent, signOut]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
