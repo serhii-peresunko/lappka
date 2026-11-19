@@ -10,6 +10,7 @@ import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { breedLook } from '@/data/breeds';
+import { parseInstagram } from '@/lib/instagram';
 import { useSession, type PetSex } from '@/providers/session';
 
 const MAX_YEARS = 30;
@@ -51,6 +52,7 @@ export default function PetDetailsScreen() {
   const [years, setYears] = useState('');
   const [months, setMonths] = useState('');
   const [bio, setBio] = useState('');
+  const [instagram, setInstagram] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   // The picture follows the chosen breed (coat color and ears).
@@ -58,7 +60,10 @@ export default function PetDetailsScreen() {
   const birthDate = parseBirthDate(birth);
   const approxAgeMonths = Number(years || 0) * 12 + Number(months || 0);
 
+  const instagramHandle = parseInstagram(instagram);
+
   const errors = {
+    instagram: instagramHandle === undefined ? 'Enter a handle like @bublyk or a profile link' : undefined,
     breed: breed.trim() ? undefined : 'Choose a breed',
     name: name.trim() ? undefined : `Enter your ${noun}'s name`,
     sex: sex ? undefined : 'Choose male or female',
@@ -77,7 +82,7 @@ export default function PetDetailsScreen() {
 
   function finish() {
     setSubmitted(true);
-    if (errors.breed || errors.name || errors.sex || errors.age || !sex) return;
+    if (errors.breed || errors.name || errors.sex || errors.age || errors.instagram || !sex) return;
     savePet({
       type,
       name: name.trim(),
@@ -86,6 +91,7 @@ export default function PetDetailsScreen() {
       approxAgeMonths: knowsBirthDate ? null : approxAgeMonths,
       breed: breed.trim(),
       bio: bio.trim(),
+      instagram: instagramHandle ?? null,
     });
   }
 
@@ -218,6 +224,17 @@ export default function PetDetailsScreen() {
         maxLength={MAX_BIO}
         style={styles.bio}
         hint={`${bio.length}/${MAX_BIO}`}
+      />
+
+      <TextField
+        label="Instagram (optional)"
+        placeholder="@yourpet"
+        value={instagram}
+        onChangeText={setInstagram}
+        error={submitted ? errors.instagram : undefined}
+        autoCapitalize="none"
+        autoCorrect={false}
+        keyboardType="url"
       />
 
       {/* Inline, not pinned: a pinned button would leave almost no room above the keyboard. */}

@@ -42,3 +42,21 @@ export function monthGrid(year: number, month: number) {
     return { iso: toIso(date), day: date.getDate(), inMonth: date.getMonth() === month };
   });
 }
+
+/** "2 years 3 months", "5 months"; for a birth date it counts from today, for an estimate it uses the months given. */
+export function ageText(birthDate: string | null, approxMonths: number | null): string {
+  let months = approxMonths ?? 0;
+  if (birthDate) {
+    const [y, m, d] = birthDate.split('-').map(Number);
+    const now = new Date();
+    months = (now.getFullYear() - y) * 12 + (now.getMonth() + 1 - m) - (now.getDate() < d ? 1 : 0);
+  }
+  months = Math.max(months, 0);
+  const years = Math.floor(months / 12);
+  const rest = months % 12;
+  const parts = [
+    years ? `${years} ${years === 1 ? 'year' : 'years'}` : '',
+    rest || !years ? `${rest} ${rest === 1 ? 'month' : 'months'}` : '',
+  ].filter(Boolean);
+  return (approxMonths !== null && !birthDate ? '~' : '') + parts.join(' ');
+}

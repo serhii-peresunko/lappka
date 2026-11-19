@@ -1,5 +1,10 @@
 import { Stack } from 'expo-router';
 
-export default function GroupLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+export default function AppLayout() {
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="add-event" />
+    </Stack>
+  );
 }

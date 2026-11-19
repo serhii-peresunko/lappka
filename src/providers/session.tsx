@@ -17,6 +17,8 @@ export type Pet = {
   approxAgeMonths: number | null;
   breed: string;
   bio: string;
+  /** Instagram handle without the @, or null. */
+  instagram: string | null;
 };
 
 export type EventKind = 'vet' | 'vaccine' | 'grooming' | 'medication' | 'other';
@@ -66,6 +68,7 @@ const DEMO_PET: Pet = {
   approxAgeMonths: null,
   breed: 'Cocker Spaniel',
   bio: '',
+  instagram: 'bublyk_demo',
 };
 
 /** A few events around today for the demo account, one of every kind, so the calendar has something to show. */

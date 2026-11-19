@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -13,11 +13,11 @@ import { KIND_COLORS, kindLabel } from '@/lib/event-kinds';
 import { todayIso } from '@/lib/dates';
 import { useSession } from '@/providers/session';
 
-/** Home: a month calendar, the events of the chosen day and the Add event button. */
-export default function HomeScreen() {
+/** Calendar tab: a month calendar, the events of the chosen day and the Add event button. */
+export default function CalendarScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { session, events, signOut } = useSession();
+  const { events } = useSession();
   const [selected, setSelected] = useState(todayIso);
 
   const dotsByDay = useMemo(() => {
@@ -37,28 +37,13 @@ export default function HomeScreen() {
     day: 'numeric',
     month: 'long',
   });
-  const pet = session?.pet;
 
   return (
     <ThemedView style={styles.root}>
-      <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+      <SafeAreaView style={styles.root} edges={['top']}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.content}>
-            <View style={styles.top}>
-              <View style={styles.flex}>
-                <ThemedText type="subtitle">Hi, {session?.ownerName}</ThemedText>
-                {pet ? (
-                  <ThemedText themeColor="textSecondary">
-                    {pet.name} · {pet.breed}
-                  </ThemedText>
-                ) : null}
-              </View>
-              <Pressable accessibilityRole="button" onPress={signOut} hitSlop={8} style={styles.signOut}>
-                <ThemedText type="smallBold" style={{ color: theme.primaryText }}>
-                  Sign out
-                </ThemedText>
-              </Pressable>
-            </View>
+            <ThemedText type="subtitle">Calendar</ThemedText>
 
             <MonthCalendar selected={selected} onSelect={setSelected} dotsByDay={dotsByDay} />
 
@@ -108,8 +93,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { flexGrow: 1, paddingHorizontal: Spacing.four, paddingVertical: Spacing.four },
   content: { width: '100%', maxWidth: 460, alignSelf: 'center', gap: Spacing.four },
-  top: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.three },
-  signOut: { minHeight: 44, justifyContent: 'center' },
   events: { gap: Spacing.two },
   dayTitle: { fontSize: 17 },
   event: {
