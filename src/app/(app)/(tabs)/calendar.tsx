@@ -1,11 +1,9 @@
-import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Button } from '@/components/ui/button';
 import { MonthCalendar } from '@/components/ui/month-calendar';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -13,10 +11,9 @@ import { KIND_COLORS, kindLabel } from '@/lib/event-kinds';
 import { todayIso } from '@/lib/dates';
 import { useSession } from '@/providers/session';
 
-/** Calendar tab: a month calendar, the events of the chosen day and the Add event button. */
+/** Calendar tab: a month calendar and the events of the chosen day. Events are added from the middle tab button. */
 export default function CalendarScreen() {
   const theme = useTheme();
-  const router = useRouter();
   const { events } = useSession();
   const [selected, setSelected] = useState(todayIso);
 
@@ -75,14 +72,6 @@ export default function CalendarScreen() {
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
-          <View style={styles.footerInner}>
-            <Button
-              title="Add event"
-              onPress={() => router.push({ pathname: '/add-event', params: { date: selected } })}
-            />
-          </View>
-        </View>
       </SafeAreaView>
     </ThemedView>
   );
@@ -105,6 +94,4 @@ const styles = StyleSheet.create({
   },
   accent: { width: 4, alignSelf: 'stretch', borderRadius: 2 },
   eventTitle: { fontSize: 16 },
-  footer: { paddingHorizontal: Spacing.four, paddingBottom: Spacing.three, paddingTop: Spacing.two },
-  footerInner: { width: '100%', maxWidth: 460, alignSelf: 'center' },
 });

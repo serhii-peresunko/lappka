@@ -1,11 +1,9 @@
-import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Button } from '@/components/ui/button';
 import { PetArt } from '@/components/ui/pet-art';
 import { Spacing } from '@/constants/theme';
 import { breedLook } from '@/data/breeds';
@@ -16,11 +14,10 @@ import { useSession } from '@/providers/session';
 
 const UPCOMING = 4;
 
-/** Home tab: greeting, the pet, the next few events and a shortcut to add one. */
+/** Home tab: greeting, the pet, the next few events and . */
 export default function HomeScreen() {
   const theme = useTheme();
-  const router = useRouter();
-  const { session, events, signOut } = useSession();
+  const { session, events } = useSession();
   const pet = session?.pet;
   const look = pet ? breedLook(pet.type, pet.breed) : undefined;
 
@@ -46,11 +43,6 @@ export default function HomeScreen() {
               <ThemedText type="subtitle" style={styles.flex}>
                 Hi, {session?.ownerName}
               </ThemedText>
-              <Pressable accessibilityRole="button" onPress={signOut} hitSlop={8} style={styles.signOut}>
-                <ThemedText type="smallBold" style={{ color: theme.primaryText }}>
-                  Sign out
-                </ThemedText>
-              </Pressable>
             </View>
 
             {pet ? (
@@ -103,7 +95,6 @@ export default function HomeScreen() {
               )}
             </View>
 
-            <Button title="Add event" onPress={() => router.push({ pathname: '/add-event', params: { date: todayIso() } })} />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -117,7 +108,6 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, paddingHorizontal: Spacing.four, paddingVertical: Spacing.four },
   content: { width: '100%', maxWidth: 460, alignSelf: 'center', gap: Spacing.four },
   top: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  signOut: { minHeight: 44, justifyContent: 'center' },
   petCard: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, borderRadius: 20, padding: Spacing.three },
   petName: { fontSize: 28, lineHeight: 34 },
   section: { gap: Spacing.two },

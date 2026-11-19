@@ -18,17 +18,20 @@ type FormScreenProps = PropsWithChildren<{
   bottom?: boolean;
   /** Shows a back button at the top. */
   onBack?: () => void;
+  /** Inside a bottom sheet: the scroll view pads itself for the keyboard instead of KeyboardAvoidingView. */
+  sheet?: boolean;
 }>;
 
 /** One column of content: heading, scrollable form, pinned footer. Used by every screen here. */
-export function FormScreen({ title, subtitle, eyebrow, footer, bottom, onBack, children }: FormScreenProps) {
+export function FormScreen({ title, subtitle, eyebrow, footer, bottom, onBack, sheet, children }: FormScreenProps) {
   const theme = useTheme();
   return (
     <ThemedView style={styles.root}>
       <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-        <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' && !sheet ? 'padding' : undefined}>
           <ScrollView
             contentContainerStyle={[styles.scroll, bottom && styles.bottom]}
+            automaticallyAdjustKeyboardInsets={sheet}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}>

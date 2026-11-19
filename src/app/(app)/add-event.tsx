@@ -46,10 +46,7 @@ export default function AddEventScreen() {
   }
 
   return (
-    <FormScreen
-      title="New event"
-      onBack={() => router.back()}
-      footer={<Button title="Save event" onPress={save} />}>
+    <FormScreen title="New event" sheet>
       <TextField
         label="Title"
         placeholder="e.g. Annual check-up"
@@ -83,6 +80,9 @@ export default function AddEventScreen() {
         keyboardType="number-pad"
         maxLength={5}
       />
+
+      {/* Inline, not pinned: in a sheet the keyboard would cover a pinned footer. */}
+      <Button title="Save event" onPress={save} />
     </FormScreen>
   );
 }
