@@ -11,7 +11,7 @@ export default function HomePlaceholder() {
   return (
     <FormScreen
       title={`Hi, ${session?.ownerName}`}
-      subtitle={pet ? `${pet.name} · ${pet.breed}` : undefined}
+      subtitle={pet ? `${pet.name} · ${pet.breed} · ${pet.sex === 'male' ? 'Male' : 'Female'}` : undefined}
       footer={<Button variant="outline" title="Sign out" onPress={signOut} />}>
       <ThemedText themeColor="textSecondary">The main screen comes next.</ThemedText>
     </FormScreen>

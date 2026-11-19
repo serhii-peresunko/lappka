@@ -23,7 +23,7 @@ export default function OwnerScreen() {
 
   return (
     <FormScreen
-      eyebrow="Step 1 of 2"
+      eyebrow="Step 1 of 3"
       title="What's your name?"
       subtitle="This is your pet owner account."
       footer={<Button title="Continue" onPress={next} />}>

@@ -1,28 +1,16 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { BreedField } from '@/components/ui/breed-field';
 import { Button } from '@/components/ui/button';
-import { ChoiceChips, Segmented } from '@/components/ui/choice';
 import { FormScreen } from '@/components/ui/form-screen';
+import { PetArt } from '@/components/ui/pet-art';
 import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { useSession } from '@/providers/session';
-
-type AgeMode = 'birth' | 'age';
-
-const OTHER = 'Other';
-const BREEDS = [
-  'Cocker Spaniel',
-  'Labrador Retriever',
-  'Golden Retriever',
-  'German Shepherd',
-  'Corgi',
-  'Poodle',
-  'Mixed breed',
-  OTHER,
-];
+import { breedLook } from '@/data/breeds';
+import { useSession, type PetSex } from '@/providers/session';
 
 const MAX_YEARS = 30;
 const MAX_BIO = 280;
@@ -30,8 +18,7 @@ const MAX_BIO = 280;
 /** "15022024" -> "15.02.2024": keeps only digits and inserts the dots while typing. */
 function formatBirthDate(input: string) {
   const digits = input.replace(/\D/g, '').slice(0, 8);
-  const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
-  return parts.join('.');
+  return [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean).join('.');
 }
 
 /** "15.02.2024" -> "2024-02-15", or null when it is not a real date or lies in the future. */
@@ -48,79 +35,86 @@ function parseBirthDate(text: string): string | null {
 
 const digitsOnly = (text: string) => text.replace(/\D/g, '').slice(0, 2);
 
-/** Step 2 for new users: the pet. Dogs only for now. */
-export default function PetScreen() {
+/** Step 3: breed, name, birth date (or approximate age) and a few words about the pet. */
+export default function PetDetailsScreen() {
   const theme = useTheme();
-  const { savePet } = useSession();
+  const { draftPetType, setDraftPetType, savePet } = useSession();
+  // The layout only shows this screen once a type is chosen.
+  const type = draftPetType ?? 'dog';
+  const noun = type === 'cat' ? 'cat' : 'dog';
 
+  const [breed, setBreed] = useState('');
   const [name, setName] = useState('');
-  const [ageMode, setAgeMode] = useState<AgeMode>('birth');
+  const [sex, setSex] = useState<PetSex | null>(null);
+  const [knowsBirthDate, setKnowsBirthDate] = useState(true);
   const [birth, setBirth] = useState('');
   const [years, setYears] = useState('');
   const [months, setMonths] = useState('');
-  const [breed, setBreed] = useState<string | null>(null);
-  const [customBreed, setCustomBreed] = useState('');
   const [bio, setBio] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
+  // The picture follows the chosen breed (coat color and ears).
+  const look = breed ? breedLook(type, breed) : undefined;
   const birthDate = parseBirthDate(birth);
   const approxAgeMonths = Number(years || 0) * 12 + Number(months || 0);
 
   const errors = {
-    name: name.trim() ? undefined : "Enter your dog's name",
-    age:
-      ageMode === 'birth'
-        ? birthDate
-          ? undefined
-          : 'Enter a real date as DD.MM.YYYY, not in the future'
-        : !years && !months
-          ? 'Enter years or months'
-          : Number(years || 0) > MAX_YEARS || Number(months || 0) > 11
-            ? `Years up to ${MAX_YEARS}, months up to 11`
-            : approxAgeMonths === 0
-              ? 'Enter an age above 0'
-              : undefined,
-    breed: !breed
-      ? 'Choose a breed'
-      : breed === OTHER && !customBreed.trim()
-        ? 'Type the breed'
-        : undefined,
+    breed: breed.trim() ? undefined : 'Choose a breed',
+    name: name.trim() ? undefined : `Enter your ${noun}'s name`,
+    sex: sex ? undefined : 'Choose male or female',
+    age: knowsBirthDate
+      ? birthDate
+        ? undefined
+        : 'Enter a real date as DD.MM.YYYY, not in the future'
+      : !years && !months
+        ? 'Enter years or months'
+        : Number(years || 0) > MAX_YEARS || Number(months || 0) > 11
+          ? `Years up to ${MAX_YEARS}, months up to 11`
+          : approxAgeMonths === 0
+            ? 'Enter an age above 0'
+            : undefined,
   };
-  const valid = !errors.name && !errors.age && !errors.breed;
 
   function finish() {
     setSubmitted(true);
-    if (!valid || !breed) return;
+    if (errors.breed || errors.name || errors.sex || errors.age || !sex) return;
     savePet({
-      type: 'dog',
+      type,
       name: name.trim(),
-      birthDate: ageMode === 'birth' ? birthDate : null,
-      approxAgeMonths: ageMode === 'age' ? approxAgeMonths : null,
-      breed: breed === OTHER ? customBreed.trim() : breed,
+      sex,
+      birthDate: knowsBirthDate ? birthDate : null,
+      approxAgeMonths: knowsBirthDate ? null : approxAgeMonths,
+      breed: breed.trim(),
       bio: bio.trim(),
     });
   }
 
   return (
     <FormScreen
-      eyebrow="Step 2 of 2"
-      title="Add your dog"
-      subtitle="Tell us a little about them.">
-      <View style={styles.group}>
-        <ThemedText type="smallBold">Pet type</ThemedText>
-        <View style={[styles.type, { borderColor: theme.primary, backgroundColor: theme.primarySoft }]}>
-          <ThemedText type="smallBold" style={{ color: theme.primaryText }}>
-            Dog
-          </ThemedText>
+      eyebrow="Step 3 of 3"
+      title={`About your ${noun}`}
+      subtitle="Just the basics. You can change them later."
+      onBack={() => setDraftPetType(null)}>
+      <View style={styles.hero}>
+        <View style={[styles.avatar, { backgroundColor: theme.primarySoft }]}>
+          <PetArt
+            type={type}
+            size={84}
+            color={theme.text}
+            accent={theme.primary}
+            bandana
+            strokeWidth={4.6}
+            fill={look?.coat}
+            ears={look?.ears}
+          />
         </View>
-        <ThemedText type="small" themeColor="textSecondary">
-          Lappka is for dogs for now. More pet types are coming soon.
-        </ThemedText>
       </View>
+
+      <BreedField type={type} value={breed} onChange={setBreed} error={submitted ? errors.breed : undefined} />
 
       <TextField
         label="Name"
-        placeholder="e.g. Bublyk"
+        placeholder={type === 'cat' ? 'e.g. Mila' : 'e.g. Bublyk'}
         value={name}
         onChangeText={setName}
         error={submitted ? errors.name : undefined}
@@ -129,16 +123,41 @@ export default function PetScreen() {
       />
 
       <View style={styles.group}>
-        <ThemedText type="smallBold">Age</ThemedText>
-        <Segmented
-          value={ageMode}
-          onChange={setAgeMode}
-          options={[
-            { value: 'birth', label: 'Birth date' },
-            { value: 'age', label: "Don't know it" },
-          ]}
-        />
-        {ageMode === 'birth' ? (
+        <ThemedText type="smallBold">Sex</ThemedText>
+        <View style={styles.row}>
+          {(['male', 'female'] as const).map((option) => {
+            const selected = sex === option;
+            return (
+              <Pressable
+                key={option}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: selected }}
+                onPress={() => setSex(option)}
+                style={[
+                  styles.sex,
+                  {
+                    borderColor: submitted && errors.sex ? theme.danger : selected ? theme.primary : theme.border,
+                    backgroundColor: selected ? theme.primarySoft : theme.backgroundElement,
+                  },
+                ]}>
+                <ThemedText
+                  type="smallBold"
+                  style={{ color: selected ? theme.primaryText : theme.text, fontSize: 16 }}>
+                  {option === 'male' ? 'Male' : 'Female'}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
+        </View>
+        {submitted && errors.sex ? (
+          <ThemedText type="small" style={{ color: theme.danger }}>
+            {errors.sex}
+          </ThemedText>
+        ) : null}
+      </View>
+
+      <View style={styles.group}>
+        {knowsBirthDate ? (
           <TextField
             label="Date of birth"
             placeholder="DD.MM.YYYY"
@@ -149,62 +168,50 @@ export default function PetScreen() {
             maxLength={10}
           />
         ) : (
-          <View style={styles.row}>
-            <View style={styles.half}>
-              <TextField
-                label="Years"
-                placeholder="0"
-                value={years}
-                onChangeText={(text) => setYears(digitsOnly(text))}
-                keyboardType="number-pad"
-                maxLength={2}
-              />
+          <>
+            <ThemedText type="smallBold">Approximate age</ThemedText>
+            <View style={styles.row}>
+              <View style={styles.half}>
+                <TextField
+                  label="Years"
+                  placeholder="0"
+                  value={years}
+                  onChangeText={(text) => setYears(digitsOnly(text))}
+                  keyboardType="number-pad"
+                  maxLength={2}
+                />
+              </View>
+              <View style={styles.half}>
+                <TextField
+                  label="Months"
+                  placeholder="0"
+                  value={months}
+                  onChangeText={(text) => setMonths(digitsOnly(text))}
+                  keyboardType="number-pad"
+                  maxLength={2}
+                />
+              </View>
             </View>
-            <View style={styles.half}>
-              <TextField
-                label="Months"
-                placeholder="0"
-                value={months}
-                onChangeText={(text) => setMonths(digitsOnly(text))}
-                keyboardType="number-pad"
-                maxLength={2}
-              />
-            </View>
-          </View>
+            {submitted && errors.age ? (
+              <ThemedText type="small" style={{ color: theme.danger }}>
+                {errors.age}
+              </ThemedText>
+            ) : null}
+          </>
         )}
-        {ageMode === 'age' && submitted && errors.age ? (
-          <ThemedText type="small" style={{ color: theme.danger }}>
-            {errors.age}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setKnowsBirthDate((value) => !value)}
+          style={styles.toggle}>
+          <ThemedText type="smallBold" style={{ color: theme.primaryText }}>
+            {knowsBirthDate ? "I don't know the exact date" : 'I know the birth date'}
           </ThemedText>
-        ) : null}
-      </View>
-
-      <View style={styles.group}>
-        <ThemedText type="smallBold">Breed</ThemedText>
-        <ChoiceChips
-          value={breed}
-          onChange={setBreed}
-          options={BREEDS.map((item) => ({ value: item, label: item }))}
-        />
-        {breed === OTHER && (
-          <TextField
-            label="Which breed?"
-            placeholder="Type the breed"
-            value={customBreed}
-            onChangeText={setCustomBreed}
-            autoCapitalize="words"
-          />
-        )}
-        {submitted && errors.breed ? (
-          <ThemedText type="small" style={{ color: theme.danger }}>
-            {errors.breed}
-          </ThemedText>
-        ) : null}
+        </Pressable>
       </View>
 
       <TextField
-        label="Bio or additional information (optional)"
-        placeholder="Personality, favorite things, allergies, anything useful…"
+        label="Info (optional)"
+        placeholder={`Personality, favorite things, allergies, anything useful…`}
         value={bio}
         onChangeText={setBio}
         multiline
@@ -220,16 +227,18 @@ export default function PetScreen() {
 }
 
 const styles = StyleSheet.create({
+  hero: {
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   group: {
     gap: Spacing.two,
-  },
-  type: {
-    alignSelf: 'flex-start',
-    minHeight: 44,
-    paddingHorizontal: Spacing.four,
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderRadius: 999,
   },
   row: {
     flexDirection: 'row',
@@ -237,6 +246,19 @@ const styles = StyleSheet.create({
   },
   half: {
     flex: 1,
+  },
+  sex: {
+    flex: 1,
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: 14,
+  },
+  toggle: {
+    alignSelf: 'flex-start',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   bio: {
     minHeight: 110,

@@ -6,9 +6,9 @@ export const unstable_settings = {
   anchor: 'owner',
 };
 
-/** Two steps in a fixed order: the owner's name first, then the pet. */
+/** Three steps in a fixed order: owner name, pet type, pet details. */
 export default function OnboardingLayout() {
-  const { session } = useSession();
+  const { session, draftPetType } = useSession();
   const hasOwner = !!session?.ownerName;
 
   return (
@@ -16,7 +16,10 @@ export default function OnboardingLayout() {
       <Stack.Protected guard={!hasOwner}>
         <Stack.Screen name="owner" />
       </Stack.Protected>
-      <Stack.Protected guard={hasOwner}>
+      <Stack.Protected guard={hasOwner && !draftPetType}>
+        <Stack.Screen name="pet-type" />
+      </Stack.Protected>
+      <Stack.Protected guard={hasOwner && !!draftPetType}>
         <Stack.Screen name="pet" />
       </Stack.Protected>
     </Stack>
