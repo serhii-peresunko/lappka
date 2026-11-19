@@ -1,10 +1,12 @@
 import type { PropsWithChildren, ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 type FormScreenProps = PropsWithChildren<{
   title: string;
@@ -12,20 +14,39 @@ type FormScreenProps = PropsWithChildren<{
   /** Small label above the title, e.g. "Step 2 of 3". */
   eyebrow?: string;
   footer?: ReactNode;
+  /** Sit the content at the bottom of the screen, within thumb reach. */
+  bottom?: boolean;
+  /** Shows a back button at the top. */
+  onBack?: () => void;
 }>;
 
 /** One column of content: heading, scrollable form, pinned footer. Used by every screen here. */
-export function FormScreen({ title, subtitle, eyebrow, footer, children }: FormScreenProps) {
+export function FormScreen({ title, subtitle, eyebrow, footer, bottom, onBack, children }: FormScreenProps) {
+  const theme = useTheme();
   return (
     <ThemedView style={styles.root}>
       <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
         <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView
-            contentContainerStyle={styles.scroll}
+            contentContainerStyle={[styles.scroll, bottom && styles.bottom]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}>
             <View style={styles.content}>
+              {onBack ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Back"
+                  hitSlop={8}
+                  onPress={onBack}
+                  style={styles.back}>
+                  <SymbolView
+                    name={{ ios: 'chevron.left', android: 'chevron_left', web: 'chevron_left' }}
+                    tintColor={theme.text}
+                    size={20}
+                  />
+                </Pressable>
+              ) : null}
               <View style={styles.heading}>
                 {eyebrow ? (
                   <ThemedText type="small" themeColor="textSecondary">
@@ -58,11 +79,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
   },
+  bottom: {
+    justifyContent: 'flex-end',
+  },
   content: {
     width: '100%',
     maxWidth: 460,
     alignSelf: 'center',
     gap: Spacing.four,
+  },
+  back: {
+    width: 44,
+    height: 44,
+    marginLeft: -Spacing.two,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    paddingLeft: Spacing.two,
   },
   heading: {
     gap: Spacing.two,

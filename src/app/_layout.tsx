@@ -18,7 +18,7 @@ function RootNavigator() {
   const needsPet = signedIn && !needsOwner && !session.pet;
   const onboarding = needsOwner || needsPet;
 
-  const fallback = !signedIn ? '/auth' : needsOwner ? '/owner' : needsPet ? '/pet' : '/';
+  const fallback = !signedIn ? '/welcome' : needsOwner ? '/owner' : needsPet ? '/pet' : '/';
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

@@ -1,10 +1,10 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useRef, useState } from 'react';
-import { Alert, Platform, StyleSheet, View, type TextInputInstance } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, View, type TextInputInstance } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
-import { Segmented } from '@/components/ui/choice';
 import { FormScreen } from '@/components/ui/form-screen';
 import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
@@ -19,10 +19,12 @@ const MIN_PASSWORD = 8;
 /** One screen for everyone: sign in or create an account with Apple, Google or email. */
 export default function AuthScreen() {
   const theme = useTheme();
+  const router = useRouter();
+  const params = useLocalSearchParams<{ mode?: string }>();
   const { signIn, signUp } = useSession();
   const passwordRef = useRef<TextInputInstance>(null);
 
-  const [mode, setMode] = useState<Mode>('sign-up');
+  const [mode, setMode] = useState<Mode>(params.mode === 'sign-in' ? 'sign-in' : 'sign-up');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -58,51 +60,10 @@ export default function AuthScreen() {
 
   return (
     <FormScreen
+      bottom
+      onBack={() => router.back()}
       title={isSignUp ? 'Create your account' : 'Welcome back'}
       subtitle="Keep your dog's care in one place.">
-      <Segmented
-        value={mode}
-        onChange={(next) => {
-          setMode(next);
-          setSubmitted(false);
-        }}
-        options={[
-          { value: 'sign-up', label: 'Create account' },
-          { value: 'sign-in', label: 'Sign in' },
-        ]}
-      />
-
-      <View style={styles.group}>
-        {/* Sign in with Apple is iOS-first, so Android shows Google and email only. */}
-        {Platform.OS !== 'android' && (
-          <Button
-            variant="dark"
-            title={`${verb} with Apple`}
-            icon={
-              <SymbolView name={{ ios: 'apple.logo' }} tintColor={theme.background} size={18} fallback={<View />} />
-            }
-            loading={pending === 'apple'}
-            disabled={pending !== null}
-            onPress={() => run('apple')}
-          />
-        )}
-        <Button
-          variant="outline"
-          title={`${verb} with Google`}
-          loading={pending === 'google'}
-          disabled={pending !== null}
-          onPress={() => run('google')}
-        />
-      </View>
-
-      <View style={styles.divider}>
-        <View style={[styles.line, { backgroundColor: theme.border }]} />
-        <ThemedText type="small" themeColor="textSecondary">
-          or
-        </ThemedText>
-        <View style={[styles.line, { backgroundColor: theme.border }]} />
-      </View>
-
       <View style={styles.group}>
         <TextField
           label="Email"
@@ -139,11 +100,62 @@ export default function AuthScreen() {
           onPress={submit}
         />
       </View>
+
+      <View style={styles.divider}>
+        <View style={[styles.line, { backgroundColor: theme.border }]} />
+        <ThemedText type="small" themeColor="textSecondary">
+          or
+        </ThemedText>
+        <View style={[styles.line, { backgroundColor: theme.border }]} />
+      </View>
+
+      <View style={styles.group}>
+        {/* Sign in with Apple is iOS-first, so Android shows Google and email only. */}
+        {Platform.OS !== 'android' && (
+          <Button
+            variant="dark"
+            title={`${verb} with Apple`}
+            icon={
+              <SymbolView name={{ ios: 'apple.logo' }} tintColor={theme.background} size={18} fallback={<View />} />
+            }
+            loading={pending === 'apple'}
+            disabled={pending !== null}
+            onPress={() => run('apple')}
+          />
+        )}
+        <Button
+          variant="outline"
+          title={`${verb} with Google`}
+          loading={pending === 'google'}
+          disabled={pending !== null}
+          onPress={() => run('google')}
+        />
+      </View>
+
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => {
+          setMode(isSignUp ? 'sign-in' : 'sign-up');
+          setSubmitted(false);
+        }}
+        style={styles.switch}>
+        <ThemedText type="small" themeColor="textSecondary">
+          {isSignUp ? 'Already have an account? ' : 'New here? '}
+          <ThemedText type="smallBold" style={{ color: theme.primaryText }}>
+            {isSignUp ? 'Sign in' : 'Create account'}
+          </ThemedText>
+        </ThemedText>
+      </Pressable>
     </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  switch: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   group: {
     gap: Spacing.three,
   },

@@ -1,5 +1,9 @@
 import { Stack } from 'expo-router';
 
-export default function GroupLayout() {
+export const unstable_settings = {
+  anchor: 'welcome',
+};
+
+export default function AuthLayout() {
   return <Stack screenOptions={{ headerShown: false }} />;
 }
