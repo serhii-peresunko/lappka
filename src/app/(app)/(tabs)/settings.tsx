@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { SymbolIcon } from '@/components/ui/symbol-icon';
 import { Button } from '@/components/ui/button';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -15,10 +16,10 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const { session, signOut } = useSession();
 
-  const rows: [string, string][] = [
-    ['Name', session?.ownerName ?? ''],
-    ['Email', session?.email ?? ''],
-    ['Signed in with', session ? METHOD[session.method] : ''],
+  const rows: { label: string; value: string; ios: string; material: string }[] = [
+    { label: 'Name', value: session?.ownerName ?? '', ios: 'person', material: 'person' },
+    { label: 'Email', value: session?.email ?? '', ios: 'envelope', material: 'mail' },
+    { label: 'Signed in with', value: session ? METHOD[session.method] : '', ios: 'key', material: 'key' },
   ];
 
   return (
@@ -29,15 +30,18 @@ export default function SettingsScreen() {
             <ThemedText type="subtitle">Settings</ThemedText>
 
             <View style={styles.section}>
-              <ThemedText type="smallBold" style={styles.sectionTitle}>
+              <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionTitle}>
                 Account
               </ThemedText>
-              <View style={[styles.card, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-                {rows.map(([label, value], index) => (
+              <View>
+                {rows.map(({ label, value, ios, material }, index) => (
                   <View
                     key={label}
-                    style={[styles.row, index > 0 && { borderTopWidth: 1, borderTopColor: theme.border }]}>
-                    <ThemedText themeColor="textSecondary">{label}</ThemedText>
+                    style={[styles.row, index > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border }]}>
+                    <SymbolIcon ios={ios} material={material} color={theme.textSecondary} size={20} />
+                    <ThemedText themeColor="textSecondary" style={styles.label}>
+                      {label}
+                    </ThemedText>
                     <ThemedText type="smallBold" style={styles.value} numberOfLines={1}>
                       {value}
                     </ThemedText>
@@ -59,15 +63,14 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, paddingHorizontal: Spacing.four, paddingVertical: Spacing.four },
   content: { width: '100%', maxWidth: 460, alignSelf: 'center', gap: Spacing.four },
   section: { gap: Spacing.two },
-  sectionTitle: { fontSize: 17 },
-  card: { borderWidth: 1, borderRadius: 16, overflow: 'hidden' },
+  sectionTitle: { fontSize: 14 },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: Spacing.three,
     minHeight: 52,
-    paddingHorizontal: Spacing.three,
   },
-  value: { fontSize: 16, flexShrink: 1, textAlign: 'right' },
+  label: { flex: 1 },
+  value: { fontSize: 16, flexShrink: 1, textAlign: 'right', maxWidth: '60%' },
 });

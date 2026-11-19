@@ -66,13 +66,13 @@ export function FloatingTabBar({ state, emitter, navigateToTab }: TabBarProps) {
                   onPress={() => router.push("/add-event")}
                   style={({ pressed }) => [
                     styles.add,
-                    { backgroundColor: theme.primary },
+                    { backgroundColor: theme.text },
                     pressed && { opacity: 0.85 },
                   ]}
                 >
                   <SymbolView
                     name={{ ios: "plus", android: "add", web: "add" }}
-                    tintColor={theme.onPrimary}
+                    tintColor={theme.background}
                     size={24}
                     weight="semibold"
                   />
@@ -84,7 +84,7 @@ export function FloatingTabBar({ state, emitter, navigateToTab }: TabBarProps) {
           const item = ITEMS[route.name];
           if (!item) return null;
           const focused = state.index === index;
-          const color = focused ? theme.primaryText : theme.textSecondary;
+          const color = focused ? theme.text : theme.textSecondary;
 
           return (
             <View key={route.key} style={styles.slot}>
@@ -103,7 +103,7 @@ export function FloatingTabBar({ state, emitter, navigateToTab }: TabBarProps) {
                 }}
                 style={[
                   styles.item,
-                  focused && { backgroundColor: theme.primarySoft },
+                  focused && { backgroundColor: theme.backgroundElement },
                 ]}
               >
                 <SymbolView
@@ -131,11 +131,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: 68,
     borderRadius: 34,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 4 },
     elevation: 8,
   },
   // Every button gets an equal-width slot, so the icons are evenly spaced and the + is dead centre.

@@ -5,6 +5,7 @@ import { View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { ChoiceChips } from '@/components/ui/choice';
+import { SymbolIcon } from '@/components/ui/symbol-icon';
 import { FormScreen } from '@/components/ui/form-screen';
 import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
@@ -16,7 +17,7 @@ import {
   parseDateInput,
   todayIso,
 } from '@/lib/dates';
-import { EVENT_KINDS } from '@/lib/event-kinds';
+import { EVENT_KINDS, KIND_ICONS } from '@/lib/event-kinds';
 import { useSession, type EventKind } from '@/providers/session';
 
 /** Add an event to the calendar: what, which kind, which day and (optionally) what time. */
@@ -58,7 +59,14 @@ export default function AddEventScreen() {
 
       <View style={{ gap: Spacing.two }}>
         <ThemedText type="smallBold">Type</ThemedText>
-        <ChoiceChips options={EVENT_KINDS} value={kind} onChange={setKind} />
+        <ChoiceChips
+          options={EVENT_KINDS.map((item) => ({
+            ...item,
+            icon: (color) => <SymbolIcon {...KIND_ICONS[item.value]} color={color} size={16} />,
+          }))}
+          value={kind}
+          onChange={setKind}
+        />
       </View>
 
       <TextField

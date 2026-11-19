@@ -17,7 +17,8 @@ export function Button({ title, variant = 'primary', loading, icon, disabled, ..
   const off = disabled || loading;
 
   const colors = {
-    primary: { background: theme.primary, text: theme.onPrimary, border: theme.primary },
+    // Ink (black on light, white on dark) rather than the orange accent.
+    primary: { background: theme.text, text: theme.background, border: theme.text },
     outline: { background: theme.background, text: theme.text, border: theme.border },
     // Apple asks for a black button on light backgrounds and a white one on dark.
     dark: { background: theme.text, text: theme.background, border: theme.text },

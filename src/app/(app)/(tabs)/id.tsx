@@ -101,7 +101,7 @@ export default function PetIdScreen() {
     ['Owner', session?.ownerName ?? ''],
   ];
 
-  const face = [styles.face, { width: cardWidth, height: cardHeight, backgroundColor: theme.backgroundElement, borderColor: theme.border }];
+  const face = [styles.face, { width: cardWidth, height: cardHeight, backgroundColor: theme.backgroundElement, borderColor: 'transparent' }];
 
   return (
     <ThemedView style={styles.root}>
@@ -196,14 +196,13 @@ const styles = StyleSheet.create({
   stage: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   face: {
     position: 'absolute',
-    borderWidth: 1,
     borderRadius: 28,
     overflow: 'hidden',
     backfaceVisibility: 'hidden',
     shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
   },
   hero: { alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.four },
   backHeader: { alignItems: 'center', paddingVertical: Spacing.three },

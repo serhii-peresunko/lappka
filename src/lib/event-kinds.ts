@@ -18,3 +18,12 @@ export const KIND_COLORS: Record<EventKind, string> = {
   medication: '#12A594',
   other: '#E5A00D',
 };
+
+/** SF Symbol (iOS) and Material (Android / web) icon names for each kind. */
+export const KIND_ICONS: Record<EventKind, { ios: string; material: string }> = {
+  vet: { ios: 'stethoscope', material: 'stethoscope' },
+  vaccine: { ios: 'syringe.fill', material: 'vaccines' },
+  grooming: { ios: 'scissors', material: 'content_cut' },
+  medication: { ios: 'pills.fill', material: 'medication' },
+  other: { ios: 'star.fill', material: 'star' },
+};

@@ -1,10 +1,16 @@
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-type Option<T extends string> = { value: T; label: string };
+type Option<T extends string> = {
+  value: T;
+  label: string;
+  /** Optional leading icon; gets the chip's text color. */
+  icon?: (color: string) => ReactNode;
+};
 
 type ChoiceProps<T extends string> = {
   options: Option<T>[];
@@ -28,10 +34,11 @@ export function ChoiceChips<T extends string>({ options, value, onChange }: Choi
             style={[
               styles.chip,
               {
-                borderColor: selected ? theme.primary : theme.border,
+                borderColor: selected ? theme.primary : 'transparent',
                 backgroundColor: selected ? theme.primarySoft : theme.backgroundElement,
               },
             ]}>
+            {option.icon?.(selected ? theme.primaryText : theme.text)}
             <ThemedText
               type="small"
               style={{ color: selected ? theme.primaryText : theme.text, fontWeight: selected ? 700 : 500 }}>
@@ -77,6 +84,9 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     minHeight: 44,
     paddingHorizontal: Spacing.three,
     justifyContent: 'center',

@@ -18,7 +18,9 @@ export function TextField({ ref, label, error, hint, style, onFocus, onBlur, ...
 
   return (
     <View style={styles.wrapper}>
-      <ThemedText type="smallBold">{label}</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        {label}
+      </ThemedText>
       <TextInput
         ref={ref}
         aria-label={label}
@@ -28,7 +30,7 @@ export function TextField({ ref, label, error, hint, style, onFocus, onBlur, ...
           {
             color: theme.text,
             backgroundColor: theme.backgroundElement,
-            borderColor: error ? theme.danger : focused ? theme.primary : theme.border,
+            borderColor: error ? theme.danger : focused ? theme.primary : 'transparent',
           },
           style,
         ]}

@@ -11,10 +11,10 @@ export const Colors = {
   light: {
     text: '#000000',
     background: '#ffffff',
-    backgroundElement: '#F0F0F3',
+    backgroundElement: '#F5F5F7',
     backgroundSelected: '#E0E1E6',
     textSecondary: '#60646C',
-    border: '#D9DBE0',
+    border: '#E6E7EB',
     // White text on primary is 4.6:1; primaryText is the same orange family for text on white.
     primary: '#C4540A',
     primaryText: '#B84C00',

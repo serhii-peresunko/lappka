@@ -73,13 +73,13 @@ export function MonthCalendar({ selected, onSelect, dotsByDay }: MonthCalendarPr
               <View
                 style={[
                   styles.day,
-                  isSelected && { backgroundColor: theme.primary },
-                  !isSelected && isToday && { borderColor: theme.primary, borderWidth: 1.5 },
+                  isSelected && { backgroundColor: theme.text },
+                  !isSelected && isToday && { borderColor: theme.text, borderWidth: 1.5 },
                 ]}>
                 <ThemedText
                   type="small"
                   style={{
-                    color: isSelected ? theme.onPrimary : cell.inMonth ? theme.text : theme.textSecondary,
+                    color: isSelected ? theme.background : cell.inMonth ? theme.text : theme.textSecondary,
                     opacity: cell.inMonth || isSelected ? 1 : 0.5,
                     fontWeight: isSelected || isToday ? 700 : 500,
                   }}>
