@@ -60,11 +60,13 @@ export function PetIdCard() {
   const { session } = useSession();
   const pet = session?.pet;
 
-  // A compact landscape ID card: photo on the left, the details on the right.
-  const cardWidth = Math.min(width - Spacing.four * 2, 360);
-  const cardHeight = cardWidth * 0.74;
-  const photoWidth = cardWidth * 0.38;
-  const photoHeight = cardWidth * 0.43;
+  // A tall rectangular card: the photo fills it, a gradient at the top and bottom carries the text.
+  const cardWidth = Math.min(width - Spacing.four * 2, 300);
+  // The photo sits on top at a 4:5 frame, shown whole (never cropped); the info block sits right under it.
+  const FRAME = 10; // the white frame around the photo
+  const photoWidth = cardWidth - FRAME * 2;
+  const photoHeight = photoWidth * 1.18;
+  const cardHeight = FRAME + photoHeight + 162;
 
   const tiltX = useSharedValue(0);
   const tiltY = useSharedValue(0);
@@ -141,72 +143,68 @@ export function PetIdCard() {
               <Animated.View style={[face, frontStyle]}>
                 <View style={styles.inner}>
                   <View style={StyleSheet.absoluteFill}>
-                  {/* A light card: white fading to a very soft grey. */}
-                  <LinearGradient colors={['#FFFFFF', '#EEEEEF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-                  {/* The photo is a clean rounded picture inset on the left: no fade, no gradient over it. */}
-                  {/* Fine wavy lines across the whole card (security pattern). */}
+                  {/* The whole photo, uncropped, at the top of the card. */}
+                  <View style={styles.whiteBase} />
+                  {/* The pattern sits on the white frame and the white info area (the photo covers it). */}
                   <View pointerEvents="none" style={StyleSheet.absoluteFill}>
                     <Svg width={cardWidth} height={cardHeight}>
                       {lines.map((d, index) => (
-                        <Path key={index} d={d} stroke="#000000" strokeOpacity={0.035} strokeWidth={0.6} fill="none" />
+                        <Path key={index} d={d} stroke="#000000" strokeOpacity={0.07} strokeWidth={0.6} fill="none" />
                       ))}
                     </Svg>
                   </View>
-                  {/* Watermark: a large, very faint paw print cropped by the corner of the card. */}
                   <View pointerEvents="none" style={styles.watermark}>
                     <SymbolIcon ios="pawprint.fill" material="pets" color="#000000" size={210} />
                   </View>
-                  <View style={styles.pad}>
-                    <View style={styles.headerRow}>
-                      <SymbolIcon ios="pawprint.fill" material="pets" color="#111111" size={14} />
-                      <ThemedText style={styles.kind}>{t('petId.cardTitle')}</ThemedText>
-                    </View>
 
-                    <View style={styles.mainRow}>
-                      <View style={[styles.photo, { width: photoWidth, height: photoHeight }]}>
-                        {pet.photo || pet.type === 'dog' ? (
-                          <PetPhoto source={pet.photo ? { uri: pet.photo } : PET_PHOTO} width={photoWidth} height={photoHeight} sharpShare={1} fit="cover" />
-                        ) : (
-                          <View style={[styles.catBox, { width: photoWidth, height: photoHeight }]}>
-                            <PetArt type={pet.type} size={72} color="#111" accent="#111" strokeWidth={4} fill={look.coat} ears={look.ears} />
+                  <View style={[styles.photoFrame, { top: FRAME, left: FRAME, width: photoWidth, height: photoHeight }]}>
+                    {pet.photo || pet.type === 'dog' ? (
+                      <PetPhoto source={pet.photo ? { uri: pet.photo } : PET_PHOTO} width={photoWidth} height={photoHeight} sharpShare={1} fit="cover" />
+                    ) : (
+                      <View style={[styles.catBox, { width: photoWidth, height: photoHeight }]}>
+                        <PetArt type={pet.type} size={150} color="#111" accent="#111" strokeWidth={4} fill={look.coat} ears={look.ears} />
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={styles.pad}>
+                    <View />
+
+                    <View style={styles.bottomInfo}>
+                      <View style={styles.nameRow}>
+                        <ThemedText style={styles.nameBig} numberOfLines={1}>
+                          {pet.name}
+                        </ThemedText>
+                        {pet.verified ? <SymbolIcon ios="checkmark.seal.fill" material="verified" color="#111111" size={22} /> : null}
+                      </View>
+                      <View style={styles.breedRow}>
+                        <ThemedText style={styles.breed} numberOfLines={1}>
+                          {breedName(pet.breed, lang)}
+                        </ThemedText>
+                        {pet.chipped ? (
+                          <View style={styles.badge}>
+                            <SymbolIcon ios="memorychip.fill" material="memory" color="#6B6B6B" size={11} />
                           </View>
-                        )}
+                        ) : null}
                       </View>
 
-                      <View style={styles.identity}>
-                        <View style={styles.identityTop}>
-                        <View style={styles.nameRow}>
-                          <ThemedText style={styles.nameBig} numberOfLines={1}>
-                            {pet.name}
-                          </ThemedText>
-                          {pet.verified ? <SymbolIcon ios="checkmark.seal.fill" material="verified" color="#111111" size={22} /> : null}
-                        </View>
-                        <View style={styles.breedRow}>
-                          <ThemedText style={styles.breed} numberOfLines={1}>
-                            {breedName(pet.breed, lang)}
-                          </ThemedText>
-                          {pet.chipped ? (
-                            <View style={styles.badge}>
-                              <SymbolIcon ios="memorychip.fill" material="memory" color="#6B6B6B" size={11} />
-                            </View>
-                          ) : null}
-                        </View>
-                        </View>
-                        <Fact label={t('petId.sex')} value={t(pet.sex)} flex={0} />
+                      <View style={styles.factsRow}>
+                        <Fact label={t('petId.sex')} value={t(pet.sex)} flex={0} dark />
+                        <Fact label={t('petId.country')} value={countryLabel(pet.country ?? 'UA', lang)} flex={0} dark />
                         <Fact
                           label={t('petId.dob')}
                           value={dob}
-                          extra={pet.birthDate ? ageText(pet.birthDate, pet.approxAgeMonths, lang) : undefined}
                           flex={0}
+                          dark
                         />
                       </View>
-                    </View>
 
-                    <View style={styles.footer}>
-                      <ThemedText style={styles.factValue} numberOfLines={1}>
-                        {countryLabel(pet.country ?? 'UA', lang)}
-                      </ThemedText>
-                      <ThemedText style={styles.cardNo}>{cardNumber(pet)}</ThemedText>
+                      {/* The card's title lives in the footer. */}
+                      <View style={styles.footer}>
+                        <SymbolIcon ios="pawprint.fill" material="pets" color="#111111" size={13} />
+                        <ThemedText style={styles.kind}>{t('petId.cardTitle')}</ThemedText>
+                        <ThemedText style={styles.cardNo}>{cardNumber(pet)}</ThemedText>
+                      </View>
                     </View>
                   </View>
                 </View>
@@ -299,19 +297,19 @@ function countryLabel(code: string, lang: 'uk' | 'en') {
 }
 
 /** One labelled value in the card's bottom row: a quiet grey label over a bold value. */
-function Fact({ label, value, extra, icon, flex }: { label: string; value: string; extra?: string; icon?: ReactNode; flex: number }) {
+function Fact({ label, value, extra, icon, flex, dark }: { label: string; value: string; extra?: string; icon?: ReactNode; flex: number; dark?: boolean }) {
   return (
     <View style={flex ? { flex } : undefined}>
-      <ThemedText style={styles.factLabel}>{label}</ThemedText>
+      <ThemedText style={[styles.factLabel, dark && styles.onDarkLabel]}>{label}</ThemedText>
       <View style={styles.factLine}>
         <View style={styles.factValueRow}>
           {icon}
-          <ThemedText style={styles.factValue} numberOfLines={1}>
+          <ThemedText style={[styles.factValue, dark && styles.onDarkValue]} numberOfLines={1}>
             {value}
           </ThemedText>
         </View>
         {extra ? (
-          <ThemedText style={styles.factExtra} numberOfLines={1}>
+          <ThemedText style={[styles.factExtra, dark && styles.onDarkExtra]} numberOfLines={1}>
             {extra}
           </ThemedText>
         ) : null}
@@ -321,12 +319,23 @@ function Fact({ label, value, extra, icon, flex }: { label: string; value: strin
 }
 
 const styles = StyleSheet.create({
-  pad: { flex: 1, padding: 16 },
+  pad: { ...(StyleSheet.absoluteFill as object), padding: 16, justifyContent: 'space-between' },
+  photoFrame: { position: 'absolute', borderRadius: 14, overflow: 'hidden' },
+  whiteBase: { ...(StyleSheet.absoluteFill as object), backgroundColor: '#FFFFFF' },
+  gradTop: { position: 'absolute', top: 0, left: 0, right: 0 },
+  gradBottom: { position: 'absolute', bottom: 0, left: 0, right: 0 },
+  bottomInfo: { gap: 2 },
+  factsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+  onDarkLabel: { color: '#8A8A8A' },
+  onDarkValue: { color: '#111111' },
+  onDarkExtra: { color: '#6B6B6B' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  watermark: { position: 'absolute', right: -46, bottom: -52, opacity: 0.025, transform: [{ rotate: '-18deg' }] },
-  kind: { color: 'rgba(0,0,0,0.4)', fontSize: 9, lineHeight: 12, fontWeight: '600', letterSpacing: 1.2 },
-  footer: { marginTop: 'auto', paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(0,0,0,0.12)', flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
-  cardNo: { color: '#6B6B6B', fontSize: 12, lineHeight: 16, fontWeight: '400', letterSpacing: 1.2 },
+  watermark: { position: 'absolute', right: -46, bottom: -52, opacity: 0.035, transform: [{ rotate: '-18deg' }] },
+  footer: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(0,0,0,0.12)' },
+  cardNo: { marginLeft: 'auto', color: '#6B6B6B', fontSize: 11, lineHeight: 14, fontWeight: '400', letterSpacing: 1.2 },
+  headerPill: { alignSelf: 'flex-start', marginTop: 6, marginLeft: 6, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.82)' },
+  kind: { color: 'rgba(0,0,0,0.65)', fontSize: 9, lineHeight: 12, fontWeight: '600', letterSpacing: 1.2 },
+  countryLine: { color: '#6B6B6B', fontSize: 15, lineHeight: 20, fontWeight: '500' },
   mainRow: { flexDirection: 'row', alignItems: 'stretch', gap: 14, marginTop: 14 },
   photo: { borderRadius: 6, overflow: 'hidden' },
   identity: { flex: 1, justifyContent: 'space-between', marginBottom: -4 },
@@ -335,15 +344,15 @@ const styles = StyleSheet.create({
   badge: { width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center' },
   breedRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  nameBig: { color: '#111111', fontSize: 28, lineHeight: 32, fontWeight: '700', flexShrink: 1 },
-  breed: { color: '#6B6B6B', fontSize: 14, lineHeight: 17, fontWeight: '500', flexShrink: 1, marginTop: -3 },
+  nameBig: { color: '#111111', fontSize: 26, lineHeight: 30, fontWeight: '500', flexShrink: 1 },
+  breed: { color: '#6B6B6B', fontSize: 13, lineHeight: 17, fontWeight: '500', flexShrink: 1 },
   // Pushed to the bottom of the column, so it lines up with the bottom edge of the photo.
-  factLabel: { color: '#8A8A8A', fontSize: 11, lineHeight: 14, fontWeight: '500' },
+  factLabel: { color: '#8A8A8A', fontSize: 10, lineHeight: 13, fontWeight: '500' },
   // The custom font has no italic face, so the slant is drawn by skewing the text.
   factExtra: { color: '#6B6B6B', fontSize: 13, lineHeight: 16, fontWeight: '400', marginTop: -2, alignSelf: 'flex-start', transform: [{ skewX: '-10deg' }] },
   factValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   factLine: { flexDirection: 'column', alignItems: 'flex-start' },
-  factValue: { color: '#111111', fontSize: 14, lineHeight: 19, fontWeight: '600' },
+  factValue: { color: '#111111', fontSize: 13, lineHeight: 17, fontWeight: '500' },
   content: { gap: Spacing.three },
   stage: { alignItems: 'center', justifyContent: 'center' },
   edge: { position: 'absolute', borderRadius: 18 },
@@ -361,15 +370,6 @@ const styles = StyleSheet.create({
   photoFade: { position: 'absolute', top: 0, left: 0, right: 0 },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.3)', marginVertical: 4 },
   cardPad: { flex: 1, paddingVertical: 12, paddingRight: 14, paddingLeft: 8, justifyContent: 'space-between' },
-  // The punched slot a lanyard clips through.
-  slot: { alignSelf: 'center', width: 54, height: 9, borderRadius: 5, backgroundColor: 'rgba(0,0,0,0.55)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
-  photoFrame: {
-    alignSelf: 'flex-start',
-    borderRadius: 10,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
-  },
   catBox: { backgroundColor: '#E4E4E6', alignItems: 'center', justifyContent: 'center' },
   // Wider than the card so the highlight can slide across without showing an edge.
   sheen: { position: 'absolute', top: 0, bottom: 0, left: '-25%', width: '150%' },
