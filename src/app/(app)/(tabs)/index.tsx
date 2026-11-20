@@ -1,12 +1,10 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { SymbolIcon } from '@/components/ui/symbol-icon';
 import { PetIdCard } from '@/components/pet-id-card';
 import { EventCard } from '@/components/ui/event-card';
 import { Spacing, TAB_BAR_SPACE } from '@/constants/theme';
@@ -18,7 +16,6 @@ const TILES = 12;
 
 /** Home tab, laid out as a bento grid: the next event (dark), the pet (peach), achievements, then what is coming up. */
 export default function HomeScreen() {
-  const router = useRouter();
   const { t, locale } = useI18n();
   const { session, events } = useSession();
   const pet = session?.pet;
@@ -55,13 +52,6 @@ export default function HomeScreen() {
                   {todayLabel}
                 </ThemedText>
               </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t('settings.title')}
-                onPress={() => router.push('/settings')}
-                style={styles.gear}>
-                <SymbolIcon ios="gearshape.fill" material="settings" color="#111111" size={20} />
-              </Pressable>
             </View>
 
             {pet ? <PetIdCard /> : null}
@@ -100,7 +90,6 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'flex-end', gap: Spacing.three },
-  gear: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderColor: '#DDDDDD' },
   glow: { position: 'absolute', top: 0, left: 0, right: 0, height: 340 },
   scroll: { flexGrow: 1, paddingHorizontal: Spacing.four, paddingTop: Spacing.four, paddingBottom: TAB_BAR_SPACE },
   content: { width: '100%', maxWidth: 460, alignSelf: 'center', gap: Spacing.four },

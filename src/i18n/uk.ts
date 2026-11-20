@@ -147,6 +147,7 @@ export const uk: Record<StringKey, string> = {
   'petId.owner': 'Власник',
   'petId.about': 'Про улюбленця',
   'petId.noNotes': 'Нотаток поки немає.',
+  'petId.country': 'Країна',
   'petId.instagram': 'Instagram',
   'petId.hint': 'Потягніть, щоб нахилити',
   'petId.achievements': 'Досягнення',

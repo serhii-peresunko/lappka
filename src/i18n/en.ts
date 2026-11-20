@@ -145,6 +145,7 @@ export const en = {
   'petId.owner': 'Owner',
   'petId.about': 'About',
   'petId.noNotes': 'No notes yet.',
+  'petId.country': 'Country',
   'petId.instagram': 'Instagram',
   'petId.hint': 'Drag to tilt',
   'petId.achievements': 'Achievements',

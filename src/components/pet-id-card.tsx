@@ -8,6 +8,7 @@ import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
+  type SharedValue,
   withRepeat,
   withSpring,
   withTiming,
@@ -46,7 +47,9 @@ function guilloche(width: number, height: number) {
   return paths;
 }
 
-const MAX_TILT = 22; // degrees
+const MAX_TILT = 30; // degrees
+const EDGE_LAYERS = 8; // stacked layers that make up the card's thickness
+const EDGE_STEP = 0.28; // px of thickness per layer
 const REST_X = 6; // degrees the card is tipped back when nobody touches it
 const REST_Y = -7;
 
@@ -60,9 +63,9 @@ export function PetIdCard() {
 
   // A compact landscape ID card: photo on the left, the details on the right.
   const cardWidth = Math.min(width - Spacing.four * 2, 360);
-  const cardHeight = cardWidth * 0.78;
+  const cardHeight = cardWidth * 0.76;
   const photoWidth = cardWidth * 0.3;
-  const photoHeight = photoWidth * 1.3;
+  const photoHeight = photoWidth * 1.25;
 
   // The front of the badge, captured as a picture for sharing.
   const shotRef = useRef<ComponentRef<typeof View>>(null);
@@ -134,6 +137,17 @@ export function PetIdCard() {
               accessibilityLabel={t('petId.cardLabel')}
               style={{ width: cardWidth, height: cardHeight }}>
               {/* One side only: photo, name, details and number, top to bottom. */}
+              {Array.from({ length: EDGE_LAYERS }, (_, i) => (
+                <EdgeLayer
+                  key={i}
+                  index={EDGE_LAYERS - 1 - i}
+                  width={cardWidth}
+                  height={cardHeight}
+                  tiltX={tiltX}
+                  tiltY={tiltY}
+                  sway={sway}
+                />
+              ))}
               <Animated.View style={[face, frontStyle]}>
                 <View style={styles.inner}>
                   <View ref={shotRef} collapsable={false} style={StyleSheet.absoluteFill}>
@@ -173,27 +187,34 @@ export function PetIdCard() {
                       </View>
 
                       <View style={styles.identity}>
+                        <View style={styles.identityTop}>
                         <View style={styles.nameRow}>
                           <ThemedText style={styles.nameBig} numberOfLines={1}>
                             {pet.name}
                           </ThemedText>
                           {pet.verified ? <SymbolIcon ios="checkmark.seal.fill" material="verified" color="#111111" size={22} /> : null}
-                          {pet.chipped ? <SymbolIcon ios="memorychip.fill" material="memory" color="#111111" size={22} /> : null}
                         </View>
-                        <ThemedText style={styles.breed} numberOfLines={1}>
-                          {breedName(pet.breed, lang)}
-                        </ThemedText>
-                        <View style={styles.sexBlock}>
-                          <Fact label={t('petId.sex')} value={t(pet.sex)} flex={0} />
+                        <View style={styles.breedRow}>
+                          <ThemedText style={styles.breed} numberOfLines={1}>
+                            {breedName(pet.breed, lang)}
+                          </ThemedText>
+                          <View style={styles.badge} accessibilityLabel={t(pet.sex)}>
+                            <ThemedText style={styles.sexGlyph}>{pet.sex === 'male' ? '\u2642' : '\u2640'}</ThemedText>
+                          </View>
+                          {pet.chipped ? (
+                            <View style={styles.badge}>
+                              <SymbolIcon ios="memorychip.fill" material="memory" color="#6B6B6B" size={11} />
+                            </View>
+                          ) : null}
                         </View>
-                        <View style={styles.dobBlock}>
-                          <Fact
+                        </View>
+                        <Fact label={t('petId.country')} value={countryLabel(pet.country ?? 'UA', lang)} flex={0} />
+                        <Fact
                             label={t('petId.dob')}
                             value={dob}
                             extra={pet.birthDate ? ageText(pet.birthDate, pet.approxAgeMonths, lang) : undefined}
                             flex={0}
                           />
-                        </View>
                       </View>
                     </View>
 
@@ -212,20 +233,93 @@ export function PetIdCard() {
                       style={StyleSheet.absoluteFill}
                     />
                   </Animated.View>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={t('petId.share')}
-                    onPress={shareCard}
-                    hitSlop={8}
-                    style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.8 }]}>
-                    <SymbolIcon ios="square.and.arrow.up" material="ios_share" color="#6B6B6B" size={20} />
-                  </Pressable>
+                  <View style={styles.actions}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t('petId.share')}
+                      onPress={shareCard}
+                      hitSlop={6}
+                      style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.8 }]}>
+                      <SymbolIcon ios="square.and.arrow.up" material="ios_share" color="#6B6B6B" size={20} />
+                    </Pressable>
+                  </View>
                 </View>
               </Animated.View>
             </View>
           </View>
     </View>
   );
+}
+
+/**
+ * One slice of the card's thickness. It rotates exactly like the face, then slides on screen by the depth it sits
+ * behind the face times the sine of the tilt, so the slices fan out into a visible side edge when the card turns.
+ */
+function EdgeLayer({
+  index,
+  width,
+  height,
+  tiltX,
+  tiltY,
+  sway,
+}: {
+  index: number;
+  width: number;
+  height: number;
+  tiltX: SharedValue<number>;
+  tiltY: SharedValue<number>;
+  sway: SharedValue<number>;
+}) {
+  const depth = (index + 1) * EDGE_STEP;
+  const style = useAnimatedStyle(() => {
+    const ax = tiltX.get() + REST_X - sway.get() * 4;
+    const ay = tiltY.get() + REST_Y + sway.get() * 8;
+    return {
+      transform: [
+        { translateX: -depth * Math.sin((ay * Math.PI) / 180) },
+        { translateY: depth * Math.sin((ax * Math.PI) / 180) },
+        { perspective: 800 },
+        { rotateX: `${ax}deg` },
+        { rotateY: `${ay}deg` },
+      ],
+    };
+  });
+  // Darker the deeper it is, so the edge reads as a solid slab in shadow.
+  const shade = 238 - index * 2.5;
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        styles.edge,
+        { width, height, backgroundColor: `rgb(${Math.round(shade)},${Math.round(shade)},${Math.round(shade) + 2})` },
+        style,
+      ]}
+    />
+  );
+}
+
+// Country names for the card. Hermes (the JS engine in React Native) has no Intl.DisplayNames, so they live here.
+const COUNTRY_NAMES: Record<string, { uk: string; en: string }> = {
+  UA: { uk: 'Україна', en: 'Ukraine' },
+  PL: { uk: 'Польща', en: 'Poland' },
+  DE: { uk: 'Німеччина', en: 'Germany' },
+  GB: { uk: 'Велика Британія', en: 'United Kingdom' },
+  US: { uk: 'США', en: 'United States' },
+  CZ: { uk: 'Чехія', en: 'Czechia' },
+  SK: { uk: 'Словаччина', en: 'Slovakia' },
+  RO: { uk: 'Румунія', en: 'Romania' },
+  MD: { uk: 'Молдова', en: 'Moldova' },
+  FR: { uk: 'Франція', en: 'France' },
+  IT: { uk: 'Італія', en: 'Italy' },
+  ES: { uk: 'Іспанія', en: 'Spain' },
+  CA: { uk: 'Канада', en: 'Canada' },
+};
+
+/** "UA" -> "🇺🇦 Україна": a flag emoji built from the two-letter code, then the name in the app language. */
+function countryLabel(code: string, lang: 'uk' | 'en') {
+  const upper = code.toUpperCase();
+  const flag = upper.replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
+  return `${flag} ${COUNTRY_NAMES[upper]?.[lang] ?? upper}`;
 }
 
 /** One labelled value in the card's bottom row: a quiet grey label over a bold value. */
@@ -235,7 +329,7 @@ function Fact({ label, value, extra, flex }: { label: string; value: string; ext
       <ThemedText style={styles.factLabel}>{label}</ThemedText>
       <ThemedText style={styles.factValue} numberOfLines={1}>
         {value}
-        {extra ? <ThemedText style={styles.factExtra}>{`  \u00b7  ${extra}`}</ThemedText> : null}
+        {extra ? <ThemedText style={styles.factExtra}>{` (${extra})`}</ThemedText> : null}
       </ThemedText>
     </View>
   );
@@ -244,26 +338,31 @@ function Fact({ label, value, extra, flex }: { label: string; value: string; ext
 const styles = StyleSheet.create({
   pad: { flex: 1, padding: 16, justifyContent: 'space-between' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  shareBtn: { position: 'absolute', right: 10, bottom: 10, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  actions: { position: 'absolute', right: 6, bottom: 10, flexDirection: 'row' },
+  actionBtn: { width: 40, height: 44, alignItems: 'center', justifyContent: 'center' },
   watermark: { position: 'absolute', right: -46, bottom: -52, opacity: 0.025, transform: [{ rotate: '-18deg' }] },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   cardNo: { color: '#333333', fontSize: 11, lineHeight: 14, fontWeight: '600', letterSpacing: 1.2 },
   kind: { color: 'rgba(0,0,0,0.4)', fontSize: 9, lineHeight: 12, fontWeight: '600', letterSpacing: 1.2 },
   mainRow: { flexDirection: 'row', alignItems: 'stretch', gap: 14 },
   photo: { borderRadius: 6, overflow: 'hidden' },
-  identity: { flex: 1, gap: 3, marginTop: -4 },
+  identity: { flex: 1, justifyContent: 'space-between' },
+  identityTop: { gap: 3, marginTop: -4 },
+  identityBottom: { gap: 8, marginBottom: -2 },
+  sexGlyph: { color: '#6B6B6B', fontSize: 12, lineHeight: 15, fontWeight: '600', textAlign: 'center' },
+  badge: { width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center' },
+  breedRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   nameBig: { color: '#111111', fontSize: 28, lineHeight: 34, fontWeight: '700', flexShrink: 1 },
-  breed: { color: '#6B6B6B', fontSize: 14, lineHeight: 19, fontWeight: '500' },
+  breed: { color: '#6B6B6B', fontSize: 14, lineHeight: 19, fontWeight: '500', flexShrink: 1 },
   // Pushed to the bottom of the column, so it lines up with the bottom edge of the photo.
-  sexBlock: { marginTop: 8 },
-  dobBlock: { marginTop: 'auto' },
   facts: { flexDirection: 'row', gap: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(0,0,0,0.12)' },
   factLabel: { color: '#8A8A8A', fontSize: 11, lineHeight: 14, fontWeight: '500' },
   factExtra: { color: '#6B6B6B', fontSize: 13, fontWeight: '400' },
   factValue: { color: '#111111', fontSize: 14, lineHeight: 19, fontWeight: '600' },
   content: { gap: Spacing.three },
   stage: { alignItems: 'center', justifyContent: 'center' },
+  edge: { position: 'absolute', borderRadius: 18 },
   face: {
     position: 'absolute',
     borderRadius: 18,

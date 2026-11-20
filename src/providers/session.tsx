@@ -20,6 +20,8 @@ export type Pet = {
   bio: string;
   /** Instagram handle without the @, or null. */
   instagram: string | null;
+  /** ISO 3166-1 alpha-2 code of the pet's home country, e.g. "UA". Missing means Ukraine. */
+  country?: string;
   /** Local uri of the pet's photo (already cropped by the owner), or null. */
   photo: string | null;
   /** Has a microchip implanted. */
