@@ -1,9 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
-import { useEffect, useMemo, useRef, type ComponentRef } from 'react';
-import * as Sharing from 'expo-sharing';
-import { captureRef } from 'react-native-view-shot';
-import { PanResponder, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useEffect, useMemo } from 'react';
+import { PanResponder, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -63,18 +61,9 @@ export function PetIdCard() {
 
   // A compact landscape ID card: photo on the left, the details on the right.
   const cardWidth = Math.min(width - Spacing.four * 2, 360);
-  const cardHeight = cardWidth * 0.76;
-  const photoWidth = cardWidth * 0.3;
-  const photoHeight = photoWidth * 1.25;
-
-  // The front of the badge, captured as a picture for sharing.
-  const shotRef = useRef<ComponentRef<typeof View>>(null);
-
-  async function shareCard() {
-    if (!shotRef.current) return;
-    const uri = await captureRef(shotRef, { format: 'png', quality: 1 });
-    if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: t('petId.share') });
-  }
+  const cardHeight = cardWidth * 0.72;
+  const photoWidth = cardWidth * 0.3234;
+  const photoHeight = cardWidth * 0.39;
 
   const tiltX = useSharedValue(0);
   const tiltY = useSharedValue(0);
@@ -150,7 +139,7 @@ export function PetIdCard() {
               ))}
               <Animated.View style={[face, frontStyle]}>
                 <View style={styles.inner}>
-                  <View ref={shotRef} collapsable={false} style={StyleSheet.absoluteFill}>
+                  <View style={StyleSheet.absoluteFill}>
                   {/* A light card: white fading to a very soft grey. */}
                   <LinearGradient colors={['#FFFFFF', '#EEEEEF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
                   {/* The photo is a clean rounded picture inset on the left: no fade, no gradient over it. */}
@@ -168,10 +157,7 @@ export function PetIdCard() {
                   </View>
                   <View style={styles.pad}>
                     <View style={styles.headerRow}>
-                      <View style={styles.brand}>
-                        <SymbolIcon ios="pawprint.fill" material="pets" color="#111111" size={14} />
-                        <ThemedText style={styles.cardNo}>{cardNumber(pet)}</ThemedText>
-                      </View>
+                      <SymbolIcon ios="pawprint.fill" material="pets" color="#111111" size={14} />
                       <ThemedText style={styles.kind}>{t('petId.cardTitle')}</ThemedText>
                     </View>
 
@@ -198,9 +184,6 @@ export function PetIdCard() {
                           <ThemedText style={styles.breed} numberOfLines={1}>
                             {breedName(pet.breed, lang)}
                           </ThemedText>
-                          <View style={styles.badge} accessibilityLabel={t(pet.sex)}>
-                            <ThemedText style={styles.sexGlyph}>{pet.sex === 'male' ? '\u2642' : '\u2640'}</ThemedText>
-                          </View>
                           {pet.chipped ? (
                             <View style={styles.badge}>
                               <SymbolIcon ios="memorychip.fill" material="memory" color="#6B6B6B" size={11} />
@@ -208,7 +191,10 @@ export function PetIdCard() {
                           ) : null}
                         </View>
                         </View>
-                        <Fact label={t('petId.country')} value={countryLabel(pet.country ?? 'UA', lang)} flex={0} />
+                        <View style={styles.pairRow}>
+                          <Fact label={t('petId.country')} value={countryLabel(pet.country ?? 'UA', lang)} flex={1.15} />
+                          <Fact label={t('petId.sex')} value={t(pet.sex)} flex={1} />
+                        </View>
                         <Fact
                             label={t('petId.dob')}
                             value={dob}
@@ -220,7 +206,7 @@ export function PetIdCard() {
 
                     <View style={styles.facts}>
                       
-                      <Fact label={t('petId.owner')} value={session?.ownerName ?? ''} flex={1} />
+                      <ThemedText style={styles.cardNoText}>{cardNumber(pet)}</ThemedText>
                     </View>
                   </View>
                 </View>
@@ -233,16 +219,6 @@ export function PetIdCard() {
                       style={StyleSheet.absoluteFill}
                     />
                   </Animated.View>
-                  <View style={styles.actions}>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={t('petId.share')}
-                      onPress={shareCard}
-                      hitSlop={6}
-                      style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.8 }]}>
-                      <SymbolIcon ios="square.and.arrow.up" material="ios_share" color="#6B6B6B" size={20} />
-                    </Pressable>
-                  </View>
                 </View>
               </Animated.View>
             </View>
@@ -336,27 +312,24 @@ function Fact({ label, value, extra, flex }: { label: string; value: string; ext
 }
 
 const styles = StyleSheet.create({
-  pad: { flex: 1, padding: 16, justifyContent: 'space-between' },
+  pad: { flex: 1, padding: 16 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  actions: { position: 'absolute', right: 6, bottom: 10, flexDirection: 'row' },
-  actionBtn: { width: 40, height: 44, alignItems: 'center', justifyContent: 'center' },
+  cardNoText: { flex: 1, textAlign: 'right', color: '#6B6B6B', fontSize: 12, lineHeight: 16, fontWeight: '400', letterSpacing: 1.2 },
   watermark: { position: 'absolute', right: -46, bottom: -52, opacity: 0.025, transform: [{ rotate: '-18deg' }] },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  cardNo: { color: '#333333', fontSize: 11, lineHeight: 14, fontWeight: '600', letterSpacing: 1.2 },
   kind: { color: 'rgba(0,0,0,0.4)', fontSize: 9, lineHeight: 12, fontWeight: '600', letterSpacing: 1.2 },
-  mainRow: { flexDirection: 'row', alignItems: 'stretch', gap: 14 },
+  mainRow: { flexDirection: 'row', alignItems: 'stretch', gap: 14, marginTop: 14 },
   photo: { borderRadius: 6, overflow: 'hidden' },
-  identity: { flex: 1, justifyContent: 'space-between' },
-  identityTop: { gap: 3, marginTop: -4 },
+  identity: { flex: 1, justifyContent: 'space-between', marginBottom: -4 },
+  identityTop: { gap: 3, marginTop: -7 },
   identityBottom: { gap: 8, marginBottom: -2 },
-  sexGlyph: { color: '#6B6B6B', fontSize: 12, lineHeight: 15, fontWeight: '600', textAlign: 'center' },
   badge: { width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center' },
   breedRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   nameBig: { color: '#111111', fontSize: 28, lineHeight: 34, fontWeight: '700', flexShrink: 1 },
   breed: { color: '#6B6B6B', fontSize: 14, lineHeight: 19, fontWeight: '500', flexShrink: 1 },
   // Pushed to the bottom of the column, so it lines up with the bottom edge of the photo.
-  facts: { flexDirection: 'row', gap: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(0,0,0,0.12)' },
+  pairRow: { flexDirection: 'row', gap: 12 },
+  facts: { marginTop: 'auto', flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(0,0,0,0.12)' },
   factLabel: { color: '#8A8A8A', fontSize: 11, lineHeight: 14, fontWeight: '500' },
   factExtra: { color: '#6B6B6B', fontSize: 13, fontWeight: '400' },
   factValue: { color: '#111111', fontSize: 14, lineHeight: 19, fontWeight: '600' },
