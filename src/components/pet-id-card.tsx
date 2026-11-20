@@ -1,8 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 import { useEffect, useMemo, useRef, type ComponentRef } from 'react';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
-import { PanResponder, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { PanResponder, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -13,7 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
-import { Button } from '@/components/ui/button';
+import { cardNumber } from '@/lib/pet-card';
 import { PetPhoto } from '@/components/ui/pet-photo';
 import { SymbolIcon } from '@/components/ui/symbol-icon';
 import { PetArt } from '@/components/ui/pet-art';
@@ -25,6 +26,25 @@ import { useSession } from '@/providers/session';
 
 // Placeholder until pets can upload their own photo.
 const PET_PHOTO = require('../../assets/images/welcome-dog-card.jpg');
+
+// Security-style guilloche: evenly spaced parallel waves, each shifted slightly from the one above, so
+// together they flow like one smooth ribbon (neat, like the pattern on an ID card or banknote).
+function guilloche(width: number, height: number) {
+  const paths: string[] = [];
+  const lines = 24;
+  const gap = height / (lines - 1);
+  for (let i = 0; i < lines; i++) {
+    const baseY = gap * i;
+    let d = '';
+    for (let x = 0; x <= width; x += 4) {
+      const t = (x / width) * Math.PI * 2 * 1.5;
+      const y = baseY + Math.sin(t + i * 0.22) * gap * 1.6;
+      d += `${x === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)} `;
+    }
+    paths.push(d);
+  }
+  return paths;
+}
 
 const MAX_TILT = 22; // degrees
 const REST_X = 6; // degrees the card is tipped back when nobody touches it
@@ -103,6 +123,7 @@ export function PetIdCard() {
   const look = breedLook(pet.type, pet.breed);
 
   const dob = pet.birthDate ? isoToInput(pet.birthDate) : ageText(pet.birthDate, pet.approxAgeMonths, lang);
+  const lines = guilloche(cardWidth, cardHeight);
   const face = [styles.face, { width: cardWidth, height: cardHeight }];
 
   return (
@@ -119,9 +140,24 @@ export function PetIdCard() {
                   {/* A light card: white fading to a very soft grey. */}
                   <LinearGradient colors={['#FFFFFF', '#EEEEEF']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
                   {/* The photo is a clean rounded picture inset on the left: no fade, no gradient over it. */}
+                  {/* Fine wavy lines across the whole card (security pattern). */}
+                  <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+                    <Svg width={cardWidth} height={cardHeight}>
+                      {lines.map((d, index) => (
+                        <Path key={index} d={d} stroke="#000000" strokeOpacity={0.035} strokeWidth={0.6} fill="none" />
+                      ))}
+                    </Svg>
+                  </View>
+                  {/* Watermark: a large, very faint paw print cropped by the corner of the card. */}
+                  <View pointerEvents="none" style={styles.watermark}>
+                    <SymbolIcon ios="pawprint.fill" material="pets" color="#000000" size={210} />
+                  </View>
                   <View style={styles.pad}>
                     <View style={styles.headerRow}>
-                      <SymbolIcon ios="pawprint.fill" material="pets" color="#111111" size={14} />
+                      <View style={styles.brand}>
+                        <SymbolIcon ios="pawprint.fill" material="pets" color="#111111" size={14} />
+                        <ThemedText style={styles.cardNo}>{cardNumber(pet)}</ThemedText>
+                      </View>
                       <ThemedText style={styles.kind}>{t('petId.cardTitle')}</ThemedText>
                     </View>
 
@@ -176,16 +212,18 @@ export function PetIdCard() {
                       style={StyleSheet.absoluteFill}
                     />
                   </Animated.View>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t('petId.share')}
+                    onPress={shareCard}
+                    hitSlop={8}
+                    style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.8 }]}>
+                    <SymbolIcon ios="square.and.arrow.up" material="ios_share" color="#6B6B6B" size={20} />
+                  </Pressable>
                 </View>
               </Animated.View>
             </View>
           </View>
-
-          <Button
-            title={t('petId.share')}
-            icon={<SymbolIcon ios="square.and.arrow.up" material="ios_share" color="#fff" size={18} />}
-            onPress={shareCard}
-          />
     </View>
   );
 }
@@ -206,6 +244,10 @@ function Fact({ label, value, extra, flex }: { label: string; value: string; ext
 const styles = StyleSheet.create({
   pad: { flex: 1, padding: 16, justifyContent: 'space-between' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  shareBtn: { position: 'absolute', right: 10, bottom: 10, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  watermark: { position: 'absolute', right: -46, bottom: -52, opacity: 0.025, transform: [{ rotate: '-18deg' }] },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cardNo: { color: '#333333', fontSize: 11, lineHeight: 14, fontWeight: '600', letterSpacing: 1.2 },
   kind: { color: 'rgba(0,0,0,0.4)', fontSize: 9, lineHeight: 12, fontWeight: '600', letterSpacing: 1.2 },
   mainRow: { flexDirection: 'row', alignItems: 'stretch', gap: 14 },
   photo: { borderRadius: 6, overflow: 'hidden' },
