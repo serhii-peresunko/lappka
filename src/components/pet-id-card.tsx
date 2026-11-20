@@ -1,6 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import { useEffect, useMemo } from 'react';
+import type { ReactNode } from 'react';
 import { PanResponder, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
@@ -45,11 +46,11 @@ function guilloche(width: number, height: number) {
   return paths;
 }
 
-const MAX_TILT = 30; // degrees
+const MAX_TILT = 14; // degrees
 const EDGE_LAYERS = 8; // stacked layers that make up the card's thickness
 const EDGE_STEP = 0.28; // px of thickness per layer
-const REST_X = 6; // degrees the card is tipped back when nobody touches it
-const REST_Y = -7;
+const REST_X = 3; // degrees the card is tipped back when nobody touches it
+const REST_Y = -3;
 
 
 /** The pet's ID badge (drag to tilt in 3D), with sharing, status and achievements under it. */
@@ -61,9 +62,9 @@ export function PetIdCard() {
 
   // A compact landscape ID card: photo on the left, the details on the right.
   const cardWidth = Math.min(width - Spacing.four * 2, 360);
-  const cardHeight = cardWidth * 0.72;
-  const photoWidth = cardWidth * 0.3234;
-  const photoHeight = cardWidth * 0.39;
+  const cardHeight = cardWidth * 0.74;
+  const photoWidth = cardWidth * 0.38;
+  const photoHeight = cardWidth * 0.43;
 
   const tiltX = useSharedValue(0);
   const tiltY = useSharedValue(0);
@@ -100,15 +101,15 @@ export function PetIdCard() {
   const frontStyle = useAnimatedStyle(() => ({
     transform: [
       { perspective: 800 },
-      { rotateX: `${tiltX.get() + REST_X - sway.get() * 4}deg` },
-      { rotateY: `${tiltY.get() + REST_Y + sway.get() * 8}deg` },
+      { rotateX: `${tiltX.get() + REST_X - sway.get() * 2}deg` },
+      { rotateY: `${tiltY.get() + REST_Y + sway.get() * 4}deg` },
     ],
   }));
 
   // Light catches the card as it tilts: a soft white sheen that follows the angle.
   const sheenStyle = useAnimatedStyle(() => ({
     opacity: Math.min(0.9, 0.35 + (Math.abs(tiltX.get()) + Math.abs(tiltY.get())) / 40),
-    transform: [{ translateX: (tiltY.get() + sway.get() * 8 - 4) * 7 }],
+    transform: [{ translateX: (tiltY.get() + sway.get() * 4 - 2) * 7 }],
   }));
 
   if (!pet) return null;
@@ -191,22 +192,21 @@ export function PetIdCard() {
                           ) : null}
                         </View>
                         </View>
-                        <View style={styles.pairRow}>
-                          <Fact label={t('petId.country')} value={countryLabel(pet.country ?? 'UA', lang)} flex={1.15} />
-                          <Fact label={t('petId.sex')} value={t(pet.sex)} flex={1} />
-                        </View>
+                        <Fact label={t('petId.sex')} value={t(pet.sex)} flex={0} />
                         <Fact
-                            label={t('petId.dob')}
-                            value={dob}
-                            extra={pet.birthDate ? ageText(pet.birthDate, pet.approxAgeMonths, lang) : undefined}
-                            flex={0}
-                          />
+                          label={t('petId.dob')}
+                          value={dob}
+                          extra={pet.birthDate ? ageText(pet.birthDate, pet.approxAgeMonths, lang) : undefined}
+                          flex={0}
+                        />
                       </View>
                     </View>
 
-                    <View style={styles.facts}>
-                      
-                      <ThemedText style={styles.cardNoText}>{cardNumber(pet)}</ThemedText>
+                    <View style={styles.footer}>
+                      <ThemedText style={styles.factValue} numberOfLines={1}>
+                        {countryLabel(pet.country ?? 'UA', lang)}
+                      </ThemedText>
+                      <ThemedText style={styles.cardNo}>{cardNumber(pet)}</ThemedText>
                     </View>
                   </View>
                 </View>
@@ -248,8 +248,8 @@ function EdgeLayer({
 }) {
   const depth = (index + 1) * EDGE_STEP;
   const style = useAnimatedStyle(() => {
-    const ax = tiltX.get() + REST_X - sway.get() * 4;
-    const ay = tiltY.get() + REST_Y + sway.get() * 8;
+    const ax = tiltX.get() + REST_X - sway.get() * 2;
+    const ay = tiltY.get() + REST_Y + sway.get() * 4;
     return {
       transform: [
         { translateX: -depth * Math.sin((ay * Math.PI) / 180) },
@@ -299,14 +299,23 @@ function countryLabel(code: string, lang: 'uk' | 'en') {
 }
 
 /** One labelled value in the card's bottom row: a quiet grey label over a bold value. */
-function Fact({ label, value, extra, flex }: { label: string; value: string; extra?: string; flex: number }) {
+function Fact({ label, value, extra, icon, flex }: { label: string; value: string; extra?: string; icon?: ReactNode; flex: number }) {
   return (
     <View style={flex ? { flex } : undefined}>
       <ThemedText style={styles.factLabel}>{label}</ThemedText>
-      <ThemedText style={styles.factValue} numberOfLines={1}>
-        {value}
-        {extra ? <ThemedText style={styles.factExtra}>{` (${extra})`}</ThemedText> : null}
-      </ThemedText>
+      <View style={styles.factLine}>
+        <View style={styles.factValueRow}>
+          {icon}
+          <ThemedText style={styles.factValue} numberOfLines={1}>
+            {value}
+          </ThemedText>
+        </View>
+        {extra ? (
+          <ThemedText style={styles.factExtra} numberOfLines={1}>
+            {extra}
+          </ThemedText>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -314,24 +323,26 @@ function Fact({ label, value, extra, flex }: { label: string; value: string; ext
 const styles = StyleSheet.create({
   pad: { flex: 1, padding: 16 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardNoText: { flex: 1, textAlign: 'right', color: '#6B6B6B', fontSize: 12, lineHeight: 16, fontWeight: '400', letterSpacing: 1.2 },
   watermark: { position: 'absolute', right: -46, bottom: -52, opacity: 0.025, transform: [{ rotate: '-18deg' }] },
   kind: { color: 'rgba(0,0,0,0.4)', fontSize: 9, lineHeight: 12, fontWeight: '600', letterSpacing: 1.2 },
+  footer: { marginTop: 'auto', paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(0,0,0,0.12)', flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
+  cardNo: { color: '#6B6B6B', fontSize: 12, lineHeight: 16, fontWeight: '400', letterSpacing: 1.2 },
   mainRow: { flexDirection: 'row', alignItems: 'stretch', gap: 14, marginTop: 14 },
   photo: { borderRadius: 6, overflow: 'hidden' },
   identity: { flex: 1, justifyContent: 'space-between', marginBottom: -4 },
-  identityTop: { gap: 3, marginTop: -7 },
+  identityTop: { gap: 0, marginTop: -7 },
   identityBottom: { gap: 8, marginBottom: -2 },
   badge: { width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.06)', alignItems: 'center', justifyContent: 'center' },
   breedRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  nameBig: { color: '#111111', fontSize: 28, lineHeight: 34, fontWeight: '700', flexShrink: 1 },
-  breed: { color: '#6B6B6B', fontSize: 14, lineHeight: 19, fontWeight: '500', flexShrink: 1 },
+  nameBig: { color: '#111111', fontSize: 28, lineHeight: 32, fontWeight: '700', flexShrink: 1 },
+  breed: { color: '#6B6B6B', fontSize: 14, lineHeight: 17, fontWeight: '500', flexShrink: 1, marginTop: -3 },
   // Pushed to the bottom of the column, so it lines up with the bottom edge of the photo.
-  pairRow: { flexDirection: 'row', gap: 12 },
-  facts: { marginTop: 'auto', flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(0,0,0,0.12)' },
   factLabel: { color: '#8A8A8A', fontSize: 11, lineHeight: 14, fontWeight: '500' },
-  factExtra: { color: '#6B6B6B', fontSize: 13, fontWeight: '400' },
+  // The custom font has no italic face, so the slant is drawn by skewing the text.
+  factExtra: { color: '#6B6B6B', fontSize: 13, lineHeight: 16, fontWeight: '400', marginTop: -2, alignSelf: 'flex-start', transform: [{ skewX: '-10deg' }] },
+  factValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  factLine: { flexDirection: 'column', alignItems: 'flex-start' },
   factValue: { color: '#111111', fontSize: 14, lineHeight: 19, fontWeight: '600' },
   content: { gap: Spacing.three },
   stage: { alignItems: 'center', justifyContent: 'center' },
