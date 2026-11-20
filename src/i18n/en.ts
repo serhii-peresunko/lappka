@@ -81,6 +81,20 @@ export const en = {
   'pet.errAgeZero': 'Enter an age above 0',
   'pet.errInstagram': 'Enter a handle like @bublyk or a profile link',
 
+  'petId.verified': 'Verified',
+  'petId.notVerified': 'Not verified',
+  'petId.chipped': 'Microchipped',
+  'petId.notChipped': 'No microchip',
+  'pet.chip': 'Microchip',
+  'yes': 'Yes',
+  'no': 'No',
+
+  'pet.photo': 'Photo (optional)',
+  'pet.addPhoto': 'Add a photo',
+  'pet.changePhoto': 'Change photo',
+  'settings.petPhoto': 'Pet photo',
+  'photo.hint': 'Move and zoom so the whole pet fits in the frame.',
+
   // tabs
   'tab.home': 'Home',
   'tab.calendar': 'Calendar',
@@ -112,15 +126,14 @@ export const en = {
   'kind.medication': 'Medication',
   'kind.other': 'Other',
   'event.title': 'New event',
-  'event.titleLabel': 'Title',
-  'event.titlePlaceholder': 'e.g. Annual check-up',
+  'event.descLabel': 'Description (optional)',
+  'event.descPlaceholder': 'e.g. Bring the vaccine passport',
   'event.type': 'Type',
   'event.date': 'Date',
   'event.time': 'Time (optional)',
+  'event.clearTime': 'Clear time',
   'event.save': 'Save event',
-  'event.errTitle': 'Enter a title',
   'event.errDate': 'Enter a real date as DD.MM.YYYY',
-  'event.errTime': 'Use 24-hour time, e.g. 09:30',
 
   // pet id
   'petId.title': 'Pet ID',
@@ -133,9 +146,17 @@ export const en = {
   'petId.about': 'About',
   'petId.noNotes': 'No notes yet.',
   'petId.instagram': 'Instagram',
-  'petId.hint': 'Drag to tilt · tap to flip',
+  'petId.hint': 'Drag to tilt',
   'petId.achievements': 'Achievements',
   'petId.cardLabel': 'Pet ID card. Tap to flip, drag to tilt.',
+
+  'petId.cardTitle': 'PET PASSPORT',
+  'petId.name': 'Name',
+  'petId.issued': 'Issued',
+  'petId.chipNo': 'Chip no.',
+  'petId.number': 'No.',
+
+  'petId.share': 'Share card',
 
   // settings
   'settings.title': 'Settings',
@@ -180,17 +201,6 @@ export const en = {
   // demo account content
   'demo.owner': 'Alex',
   'demo.pet': 'Bublyk',
-  'demo.e0': 'Annual check-up',
-  'demo.e1': 'Rabies shot',
-  'demo.e2': 'Haircut',
-  'demo.e3': 'Flea & tick pill',
-  'demo.e4': 'Puppy training',
-  'demo.e5': 'Dental cleaning',
-  'demo.e6': 'Booster',
-  'demo.e7': 'Nail trim',
-  'demo.e8': 'Deworming',
-  'demo.e9': 'Dog park meetup',
-  'demo.e10': 'Limping check',
 } as const;
 
 export type StringKey = keyof typeof en;

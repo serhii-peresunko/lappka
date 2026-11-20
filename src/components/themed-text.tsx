@@ -1,4 +1,6 @@
-import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
+import { Platform, StyleSheet, Text, type TextProps, type TextStyle } from 'react-native';
+
+import { fontFamilyFor } from '@/constants/typography';
 
 import { Fonts, ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -11,7 +13,11 @@ export type ThemedTextProps = TextProps & {
 export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
   const theme = useTheme();
 
-  return <Text style={[{ color: theme[themeColor ?? 'text'] }, styles[type], style]} {...rest} />;
+  const merged: TextStyle = StyleSheet.flatten([{ color: theme[themeColor ?? 'text'] }, styles[type], style]) ?? {};
+  // Code text keeps its monospace font; everything else uses Google Sans Flex at the matching weight.
+  const family = type === 'code' ? undefined : fontFamilyFor(merged.fontWeight);
+  // The weight is baked into the family, so fontWeight is dropped to avoid synthetic bolding on top.
+  return <Text style={[merged, family ? { fontFamily: family, fontWeight: undefined } : null]} {...rest} />;
 }
 
 const styles = StyleSheet.create({

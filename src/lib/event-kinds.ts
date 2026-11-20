@@ -6,11 +6,11 @@ export const EVENT_KIND_ORDER: EventKind[] = ['vet', 'vaccine', 'grooming', 'med
 
 /** One color per kind, used for the calendar dots and the event cards. */
 export const KIND_COLORS: Record<EventKind, string> = {
-  vet: '#E5484D',
-  vaccine: '#2F80ED',
-  grooming: '#8E4EC6',
-  medication: '#12A594',
-  other: '#E5A00D',
+  vet: '#111111',
+  vaccine: '#4D4D4D',
+  grooming: '#7A7A7A',
+  medication: '#A0A0A0',
+  other: '#C2C2C2',
 };
 
 /** SF Symbol (iOS) and Material (Android / web) icon names for each kind. */

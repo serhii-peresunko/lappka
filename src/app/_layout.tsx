@@ -1,3 +1,10 @@
+import {
+  GoogleSansFlex_400Regular,
+  GoogleSansFlex_500Medium,
+  GoogleSansFlex_600SemiBold,
+  GoogleSansFlex_700Bold,
+  useFonts,
+} from '@expo-google-fonts/google-sans-flex';
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 
 import { I18nProvider } from '@/i18n';
@@ -36,6 +43,15 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    GoogleSansFlex_400Regular,
+    GoogleSansFlex_500Medium,
+    GoogleSansFlex_600SemiBold,
+    GoogleSansFlex_700Bold,
+  });
+  // Wait for the font so the first frame is not drawn in the system font.
+  if (!fontsLoaded) return null;
+
   return (
     <ThemeProvider value={DefaultTheme}>
       <I18nProvider>

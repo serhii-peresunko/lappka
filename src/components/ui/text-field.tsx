@@ -3,6 +3,7 @@ import { StyleSheet, TextInput, View, type TextInputInstance, type TextInputProp
 
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
+import { fontFamilyFor } from '@/constants/typography';
 import { useTheme } from '@/hooks/use-theme';
 
 export type TextFieldProps = Omit<TextInputProps, 'ref'> & {
@@ -68,6 +69,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two + Spacing.one,
     fontSize: 16,
+    fontFamily: fontFamilyFor(500),
     // The border already shows focus; drop the browser's extra outline on web.
     outlineWidth: 0,
   },

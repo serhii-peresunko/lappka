@@ -11,15 +11,15 @@ export const Colors = {
   light: {
     text: '#000000',
     background: '#ffffff',
-    backgroundElement: '#F5F5F7',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-    border: '#E6E7EB',
+    backgroundElement: '#F5F5F5',
+    backgroundSelected: '#E4E4E4',
+    textSecondary: '#666666',
+    border: '#E6E6E6',
     // White text on primary is 4.6:1; primaryText is the same orange family for text on white.
-    primary: '#C4540A',
-    primaryText: '#B84C00',
+    primary: '#111111',
+    primaryText: '#111111',
     onPrimary: '#FFFFFF',
-    primarySoft: '#FDE9DA',
+    primarySoft: '#EDEDED',
     danger: '#C62828',
   },
 } as const;

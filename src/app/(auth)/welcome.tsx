@@ -5,6 +5,7 @@ import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { SymbolIcon } from '@/components/ui/symbol-icon';
 import { Spacing } from '@/constants/theme';
 import { useI18n } from '@/i18n';
 
@@ -36,7 +37,10 @@ export default function WelcomeScreen() {
       />
 
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-        <ThemedText style={styles.brand}>Lappka</ThemedText>
+        {/* The brand mark is a paw ("лапка"). */}
+        <View style={styles.brand}>
+          <SymbolIcon ios="pawprint.fill" material="pets" color="#fff" size={30} />
+        </View>
 
         <View style={styles.bottom}>
           <ThemedText style={styles.headline}>{t('welcome.headline')}</ThemedText>
@@ -63,14 +67,7 @@ const styles = StyleSheet.create({
   photo: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%', resizeMode: 'cover' },
   topShade: { position: 'absolute', top: 0, left: 0, right: 0, height: 160 },
   bottomShade: { position: 'absolute', bottom: 0, left: 0, right: 0, height: '58%' },
-  brand: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.two,
-  },
+  brand: { paddingHorizontal: Spacing.four, paddingTop: Spacing.two },
   bottom: {
     flex: 1,
     justifyContent: 'flex-end',

@@ -15,8 +15,6 @@ type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>
 const ITEMS: Record<string, { label: StringKey; ios: string; material: string }> = {
   index: { label: 'tab.home', ios: 'house.fill', material: 'home' },
   calendar: { label: 'tab.calendar', ios: 'calendar', material: 'calendar_month' },
-  id: { label: 'tab.petId', ios: 'person.text.rectangle.fill', material: 'badge' },
-  settings: { label: 'tab.settings', ios: 'gearshape.fill', material: 'settings' },
 };
 
 /**
@@ -47,7 +45,7 @@ export function FloatingTabBar({ state, emitter, navigateToTab }: TabBarProps) {
                     accessibilityLabel={t('tab.add')}
                     onPress={() => router.push('/add-event')}
                     style={({ pressed }) => [styles.add, { backgroundColor: theme.text }, pressed && { opacity: 0.85 }]}>
-                    <SymbolIcon ios="plus" material="add" color={theme.background} size={24} />
+                    <SymbolIcon ios="plus" material="add" color={theme.background} size={22} />
                   </Pressable>
                 </View>
               );
@@ -86,9 +84,10 @@ export function FloatingTabBar({ state, emitter, navigateToTab }: TabBarProps) {
 
 const styles = StyleSheet.create({
   // Absolute, so the page scrolls underneath and shows through the blur.
-  wrap: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: Spacing.three },
+  wrap: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center' },
   shadow: {
-    borderRadius: 34,
+    width: 204,
+    borderRadius: 32,
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 20,
@@ -98,8 +97,8 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 68,
-    borderRadius: 34,
+    height: 64,
+    borderRadius: 32,
     overflow: 'hidden',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,255,255,0.7)',
@@ -107,6 +106,6 @@ const styles = StyleSheet.create({
   tint: { ...(StyleSheet.absoluteFill as object), backgroundColor: 'rgba(255,255,255,0.55)' },
   // Every button gets an equal-width slot, so the icons are evenly spaced and the + is dead centre.
   slot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  item: { height: 48, width: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  add: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  item: { height: 44, width: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  add: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
 });

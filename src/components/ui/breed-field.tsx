@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BreedIcon } from '@/components/ui/breed-icon';
 import { Spacing } from '@/constants/theme';
+import { fontFamilyFor } from '@/constants/typography';
 import { breedName, breedsFor } from '@/data/breeds';
 import { useI18n } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
@@ -225,6 +226,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
+    fontFamily: fontFamilyFor(500),
     paddingVertical: Spacing.two,
     // The border already shows the field; drop the browser's extra outline on web.
     outlineWidth: 0,

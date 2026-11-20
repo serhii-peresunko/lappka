@@ -1,4 +1,3 @@
-import type { StringKey } from '@/i18n/en';
 import { useI18n } from '@/i18n';
 import { createContext, useCallback, useContext, useMemo, useState, type PropsWithChildren } from 'react';
 
@@ -21,13 +20,20 @@ export type Pet = {
   bio: string;
   /** Instagram handle without the @, or null. */
   instagram: string | null;
+  /** Local uri of the pet's photo (already cropped by the owner), or null. */
+  photo: string | null;
+  /** Has a microchip implanted. */
+  chipped: boolean;
+  /** Identity confirmed (e.g. by a vet). A mock flag until there is a backend to set it. */
+  verified: boolean;
 };
 
 export type EventKind = 'vet' | 'vaccine' | 'grooming' | 'medication' | 'other';
 
 export type PetEvent = {
   id: string;
-  title: string;
+  /** Optional note about the event; may be empty. */
+  description: string;
   kind: EventKind;
   /** Local calendar day, YYYY-MM-DD. */
   date: string;
@@ -51,6 +57,7 @@ type SessionContextValue = {
   signUp: (method: AuthMethod, email?: string) => Promise<void>;
   saveOwnerName: (name: string) => void;
   savePet: (pet: Pet) => void;
+  setPetPhoto: (uri: string | null) => void;
   events: PetEvent[];
   addEvent: (event: Omit<PetEvent, 'id'>) => void;
   signOut: () => void;
@@ -71,30 +78,10 @@ const demoPet = (name: string): Pet => ({
   breed: 'Cocker Spaniel',
   bio: '',
   instagram: 'bublyk_demo',
+  photo: null,
+  chipped: true,
+  verified: true,
 });
-
-/** A few events around today for the demo account, one of every kind, so the calendar has something to show. */
-function demoEvents(titles: string[]): PetEvent[] {
-  const day = (offset: number) => {
-    const date = new Date();
-    date.setDate(date.getDate() + offset);
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  };
-  const list: [number, EventKind, string, string | null][] = [
-    [0, 'vet', titles[0], '10:00'],
-    [0, 'vaccine', titles[1], '10:30'],
-    [0, 'grooming', titles[2], '15:00'],
-    [0, 'medication', titles[3], '20:00'],
-    [0, 'other', titles[4], null],
-    [2, 'vet', titles[5], '09:00'],
-    [4, 'vaccine', titles[6], '11:00'],
-    [4, 'grooming', titles[7], '12:00'],
-    [7, 'medication', titles[8], null],
-    [-3, 'other', titles[9], '18:00'],
-    [-5, 'vet', titles[10], '16:30'],
-  ];
-  return list.map(([offset, kind, title, time], index) => ({ id: `demo-${index}`, kind, title, time, date: day(offset) }));
-}
 
 function emailFor(method: AuthMethod, email: string | undefined, isNew: boolean) {
   if (email) return email;
@@ -110,7 +97,6 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const signIn = useCallback(async (method: AuthMethod, email?: string) => {
     await wait();
     setSession({ method, email: emailFor(method, email, false), ownerName: t('demo.owner'), pet: demoPet(t('demo.pet')) });
-    setEvents(demoEvents(Array.from({ length: 11 }, (_, i) => t(`demo.e${i}` as StringKey))));
   }, [t]);
 
   const signUp = useCallback(async (method: AuthMethod, email?: string) => {
@@ -130,6 +116,10 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setEvents((current) => [...current, { ...event, id: `${Date.now()}-${current.length}` }]);
   }, []);
 
+  const setPetPhoto = useCallback((photo: string | null) => {
+    setSession((current) => (current?.pet ? { ...current, pet: { ...current.pet, photo } } : current));
+  }, []);
+
   const signOut = useCallback(() => {
     setSession(null);
     setEvents([]);
@@ -137,8 +127,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
   }, []);
 
   const value = useMemo(
-    () => ({ session, draftPetType, setDraftPetType, signIn, signUp, saveOwnerName, savePet, events, addEvent, signOut }),
-    [session, draftPetType, signIn, signUp, saveOwnerName, savePet, events, addEvent, signOut]
+    () => ({ session, draftPetType, setDraftPetType, signIn, signUp, saveOwnerName, savePet, setPetPhoto, events, addEvent, signOut }),
+    [session, draftPetType, signIn, signUp, saveOwnerName, savePet, setPetPhoto, events, addEvent, signOut]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

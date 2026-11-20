@@ -6,18 +6,18 @@ export const MIXED_BREED = 'Mixed breed';
 
 /** Coat colors used by the breed icons. */
 const COAT = {
-  cream: '#F3DDB8',
-  golden: '#E7B56D',
-  red: '#D98249',
-  brown: '#A5714A',
-  chocolate: '#6F4A36',
-  black: '#4A403C',
+  cream: '#EFEFEF',
+  golden: '#C9C9C9',
+  red: '#9A9A9A',
+  brown: '#7A7A7A',
+  chocolate: '#4A4A4A',
+  black: '#2B2B2B',
   white: '#FFFFFF',
-  gray: '#B8BDC6',
-  blue: '#9AA6B5',
-  sand: '#D9C29B',
-  fawn: '#C99C6B',
-  tabby: '#B8956B',
+  gray: '#BDBDBD',
+  blue: '#A5A5A5',
+  sand: '#DADADA',
+  fawn: '#B0B0B0',
+  tabby: '#8C8C8C',
 } as const;
 
 export type Breed<E> = { name: string; coat: string; ears: E };
@@ -79,7 +79,7 @@ const CATS: Breed<CatEars>[] = [
   cat('Persian', COAT.cream, 'fold'),
   cat('Bengal', COAT.golden, 'pointy'),
   cat('Ragdoll', COAT.white, 'pointy'),
-  cat('Sphynx', '#E8C9BD', 'big'),
+  cat('Sphynx', '#E2E2E2', 'big'),
   cat('Russian Blue', COAT.blue, 'pointy'),
   cat('Abyssinian', COAT.red, 'big'),
   cat('Norwegian Forest Cat', COAT.tabby, 'big'),
@@ -99,8 +99,8 @@ const CATS: Breed<CatEars>[] = [
 export type BreedEntry = { name: string; coat: string; ears: DogEars | CatEars };
 
 const MIXED: Record<PetType, BreedEntry> = {
-  dog: { name: MIXED_BREED, coat: '#D8C3A5', ears: 'floppy' },
-  cat: { name: MIXED_BREED, coat: '#D8C3A5', ears: 'pointy' },
+  dog: { name: MIXED_BREED, coat: '#D0D0D0', ears: 'floppy' },
+  cat: { name: MIXED_BREED, coat: '#D0D0D0', ears: 'pointy' },
 };
 
 /** Breeds for a pet type: "Mixed breed" first, then A to Z. */

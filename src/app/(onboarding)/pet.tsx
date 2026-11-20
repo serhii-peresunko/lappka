@@ -6,10 +6,13 @@ import { BreedField } from '@/components/ui/breed-field';
 import { Button } from '@/components/ui/button';
 import { FormScreen } from '@/components/ui/form-screen';
 import { PetArt } from '@/components/ui/pet-art';
+import { Segmented } from '@/components/ui/choice';
 import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { breedLook } from '@/data/breeds';
+import { PetPhoto } from '@/components/ui/pet-photo';
+import { pickPetPhoto } from '@/lib/pick-photo';
 import { useI18n } from '@/i18n';
 import { parseInstagram } from '@/lib/instagram';
 import { useSession, type PetSex } from '@/providers/session';
@@ -54,6 +57,8 @@ export default function PetDetailsScreen() {
   const [months, setMonths] = useState('');
   const [bio, setBio] = useState('');
   const [instagram, setInstagram] = useState('');
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [chipped, setChipped] = useState<'yes' | 'no'>('no');
   const [submitted, setSubmitted] = useState(false);
 
   // The picture follows the chosen breed (coat color and ears).
@@ -93,6 +98,10 @@ export default function PetDetailsScreen() {
       breed: breed.trim(),
       bio: bio.trim(),
       instagram: instagramHandle ?? null,
+      photo,
+      chipped: chipped === 'yes',
+      // Verification comes later (from a vet), never from the owner's own form.
+      verified: false,
     });
   }
 
@@ -231,6 +240,43 @@ export default function PetDetailsScreen() {
         hint={`${bio.length}/${MAX_BIO}`}
       />
 
+      <View style={styles.group}>
+        <ThemedText type="small" themeColor="textSecondary">
+          {t('pet.photo')}
+        </ThemedText>
+        <Pressable
+          accessibilityRole="button"
+          onPress={async () => {
+            const uri = await pickPetPhoto();
+            if (uri) setPhoto(uri);
+          }}
+          style={[styles.photoBox, { backgroundColor: theme.backgroundElement }]}>
+          {photo ? (
+            <PetPhoto source={{ uri: photo }} width={96} height={120} />
+          ) : (
+            <ThemedText type="smallBold">{t('pet.addPhoto')}</ThemedText>
+          )}
+          {photo ? <ThemedText type="smallBold">{t('pet.changePhoto')}</ThemedText> : null}
+        </Pressable>
+        <ThemedText type="small" themeColor="textSecondary">
+          {t('photo.hint')}
+        </ThemedText>
+      </View>
+
+      <View style={styles.group}>
+        <ThemedText type="small" themeColor="textSecondary">
+          {t('pet.chip')}
+        </ThemedText>
+        <Segmented<'yes' | 'no'>
+          value={chipped}
+          onChange={setChipped}
+          options={[
+            { value: 'yes', label: t('yes') },
+            { value: 'no', label: t('no') },
+          ]}
+        />
+      </View>
+
       <TextField
         label={t('pet.instagram')}
         placeholder="@yourpet"
@@ -277,6 +323,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 14,
   },
+  photoBox: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, borderRadius: 16, padding: Spacing.three, minHeight: 64, overflow: 'hidden' },
   toggle: {
     alignSelf: 'flex-start',
     minHeight: 44,

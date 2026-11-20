@@ -83,6 +83,20 @@ export const uk: Record<StringKey, string> = {
   'pet.errAgeZero': 'Вкажіть вік більший за 0',
   'pet.errInstagram': 'Введіть нік на кшталт @bublyk або посилання на профіль',
 
+  'petId.verified': 'Верифіковано',
+  'petId.notVerified': 'Не верифіковано',
+  'petId.chipped': 'Чипований',
+  'petId.notChipped': 'Без чипа',
+  'pet.chip': 'Чип',
+  'yes': 'Так',
+  'no': 'Ні',
+
+  'pet.photo': 'Фото (необовʼязково)',
+  'pet.addPhoto': 'Додати фото',
+  'pet.changePhoto': 'Змінити фото',
+  'settings.petPhoto': 'Фото улюбленця',
+  'photo.hint': 'Посуньте й змасштабуйте, щоб улюбленець поміщався цілий.',
+
   // tabs
   'tab.home': 'Головна',
   'tab.calendar': 'Календар',
@@ -114,15 +128,14 @@ export const uk: Record<StringKey, string> = {
   'kind.medication': 'Ліки',
   'kind.other': 'Інше',
   'event.title': 'Нова подія',
-  'event.titleLabel': 'Назва',
-  'event.titlePlaceholder': 'напр. Щорічний огляд',
+  'event.descLabel': 'Опис (необов’язково)',
+  'event.descPlaceholder': 'напр. Взяти паспорт щеплень',
   'event.type': 'Тип',
   'event.date': 'Дата',
   'event.time': 'Час (необовʼязково)',
+  'event.clearTime': 'Прибрати час',
   'event.save': 'Зберегти подію',
-  'event.errTitle': 'Введіть назву',
   'event.errDate': 'Введіть дійсну дату ДД.ММ.РРРР',
-  'event.errTime': 'Формат 24 години, напр. 09:30',
 
   // pet id
   'petId.title': 'Паспорт',
@@ -135,9 +148,17 @@ export const uk: Record<StringKey, string> = {
   'petId.about': 'Про улюбленця',
   'petId.noNotes': 'Нотаток поки немає.',
   'petId.instagram': 'Instagram',
-  'petId.hint': 'Тягніть · торкніться, щоб перевернути',
+  'petId.hint': 'Потягніть, щоб нахилити',
   'petId.achievements': 'Досягнення',
   'petId.cardLabel': 'Паспорт улюбленця. Торкніться, щоб перевернути, тягніть, щоб нахилити.',
+
+  'petId.cardTitle': 'ПАСПОРТ УЛЮБЛЕНЦЯ',
+  'petId.name': 'Імʼя',
+  'petId.issued': 'Видано',
+  'petId.chipNo': 'Номер чипа',
+  'petId.number': '№',
+
+  'petId.share': 'Поділитися карткою',
 
   // settings
   'settings.title': 'Налаштування',
@@ -182,15 +203,4 @@ export const uk: Record<StringKey, string> = {
   // demo account content
   'demo.owner': 'Олексій',
   'demo.pet': 'Бублик',
-  'demo.e0': 'Щорічний огляд',
-  'demo.e1': 'Щеплення від сказу',
-  'demo.e2': 'Стрижка',
-  'demo.e3': 'Таблетка від бліх і кліщів',
-  'demo.e4': 'Дресирування',
-  'demo.e5': 'Чистка зубів',
-  'demo.e6': 'Ревакцинація',
-  'demo.e7': 'Підстригання кігтів',
-  'demo.e8': 'Глистогінна',
-  'demo.e9': 'Зустріч на собачому майданчику',
-  'demo.e10': 'Огляд лапи',
 };
