@@ -11,6 +11,7 @@ import { Spacing, TAB_BAR_SPACE } from '@/constants/theme';
 import { useI18n } from '@/i18n';
 import { EVENT_KIND_ORDER, KIND_COLORS, KIND_ICONS, kindKey } from '@/lib/event-kinds';
 import { todayIso } from '@/lib/dates';
+import { expandEvents } from '@/lib/repeat';
 import { useSession, type EventKind } from '@/providers/session';
 
 /** Calendar tab: a month calendar and the events of the chosen day. Events are added from the middle tab button. */
@@ -20,17 +21,22 @@ export default function CalendarScreen() {
   const { t, locale } = useI18n();
   const [selected, setSelected] = useState(todayIso);
 
+  // Repeating events are spread over a window around today (a year back, two ahead).
+  const shown = useMemo(() => {
+    const now = new Date();
+    return expandEvents(events, `${now.getFullYear() - 1}-01-01`, `${now.getFullYear() + 2}-12-31`);
+  }, [events]);
   const dotsByDay = useMemo(() => {
     const map = new Map<string, EventKind[]>();
-    for (const event of events) map.set(event.date, [...(map.get(event.date) ?? []), event.kind]);
+    for (const event of shown) map.set(event.date, [...(map.get(event.date) ?? []), event.kind]);
     return map;
-  }, [events]);
+  }, [shown]);
   const dayEvents = useMemo(
     () =>
-      events
+      shown
         .filter((event) => event.date === selected)
         .sort((a, b) => (a.time ?? '').localeCompare(b.time ?? '')),
-    [events, selected]
+    [shown, selected]
   );
   const dayRaw = new Date(`${selected}T12:00:00`).toLocaleDateString(locale, {
     weekday: 'long',

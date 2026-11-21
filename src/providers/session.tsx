@@ -32,6 +32,9 @@ export type Pet = {
 
 export type EventKind = 'vet' | 'vaccine' | 'grooming' | 'medication' | 'other';
 
+/** How often an event comes back: every `every` days / weeks / months / years. */
+export type Repeat = { every: number; unit: 'day' | 'week' | 'month' | 'year' };
+
 export type PetEvent = {
   id: string;
   /** Optional note about the event; may be empty. */
@@ -41,6 +44,8 @@ export type PetEvent = {
   date: string;
   /** HH:MM, or null for an all-day event. */
   time: string | null;
+  /** Repeats after the first date; null or missing for a one-off event. */
+  repeat?: Repeat | null;
 };
 
 type Session = {
@@ -60,6 +65,8 @@ type SessionContextValue = {
   saveOwnerName: (name: string) => void;
   savePet: (pet: Pet) => void;
   setPetPhoto: (uri: string | null) => void;
+  /** Deletes the pet and its events; the app then asks for a new pet (onboarding). */
+  removePet: () => void;
   events: PetEvent[];
   addEvent: (event: Omit<PetEvent, 'id'>) => void;
   signOut: () => void;
@@ -122,6 +129,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setSession((current) => (current?.pet ? { ...current, pet: { ...current.pet, photo } } : current));
   }, []);
 
+  const removePet = useCallback(() => {
+    setSession((current) => (current ? { ...current, pet: null } : current));
+    setEvents([]);
+    setDraftPetType(null);
+  }, []);
+
   const signOut = useCallback(() => {
     setSession(null);
     setEvents([]);
@@ -129,8 +142,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
   }, []);
 
   const value = useMemo(
-    () => ({ session, draftPetType, setDraftPetType, signIn, signUp, saveOwnerName, savePet, setPetPhoto, events, addEvent, signOut }),
-    [session, draftPetType, signIn, signUp, saveOwnerName, savePet, setPetPhoto, events, addEvent, signOut]
+    () => ({ session, draftPetType, setDraftPetType, signIn, signUp, saveOwnerName, savePet, setPetPhoto, removePet, events, addEvent, signOut }),
+    [session, draftPetType, signIn, signUp, saveOwnerName, savePet, setPetPhoto, removePet, events, addEvent, signOut]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

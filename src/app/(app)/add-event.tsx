@@ -18,7 +18,8 @@ import {
 } from '@/lib/dates';
 import { EVENT_KIND_ORDER, KIND_ICONS, kindKey } from '@/lib/event-kinds';
 import { useI18n } from '@/i18n';
-import { useSession, type EventKind } from '@/providers/session';
+import { useSession, type EventKind, type Repeat } from '@/providers/session';
+import { ChoiceChips } from '@/components/ui/choice';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const timeToDate = (hhmm: string) => {
@@ -28,6 +29,18 @@ const timeToDate = (hhmm: string) => {
   return date;
 };
 const dateToTime = (date: Date) => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+
+type RepeatMode = 'none' | 'biweekly' | 'monthly' | 'yearly' | 'custom';
+
+function repeatFor(mode: RepeatMode, custom: Repeat): Repeat | null {
+  if (mode === 'biweekly') return { every: 2, unit: 'week' };
+  if (mode === 'monthly') return { every: 1, unit: 'month' };
+  if (mode === 'yearly') return { every: 1, unit: 'year' };
+  if (mode === 'custom') return custom;
+  return null;
+}
+
+const UNITS: Repeat['unit'][] = ['day', 'week', 'month', 'year'];
 
 /** Add an event to the calendar: what, which kind, which day and (optionally) what time. */
 export default function AddEventScreen() {
@@ -42,6 +55,8 @@ export default function AddEventScreen() {
   const [dateText, setDateText] = useState(isoToInput(dateParam ?? todayIso()));
   const [time, setTime] = useState('');
   const [pickingTime, setPickingTime] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>('none');
+  const [custom, setCustom] = useState<Repeat>({ every: 2, unit: 'week' });
   const [submitted, setSubmitted] = useState(false);
 
   const date = parseDateInput(dateText);
@@ -52,7 +67,7 @@ export default function AddEventScreen() {
   function save() {
     setSubmitted(true);
     if (errors.date || !date) return;
-    addEvent({ description: description.trim(), kind, date, time: time || null });
+    addEvent({ description: description.trim(), kind, date, time: time || null, repeat: repeatFor(repeatMode, custom) });
     router.back();
   }
 
@@ -139,6 +154,52 @@ export default function AddEventScreen() {
         ) : null}
       </View>
 
+      <View style={{ gap: Spacing.two }}>
+        <ThemedText type="small" themeColor="textSecondary">
+          {t('event.repeat')}
+        </ThemedText>
+        <ChoiceChips<RepeatMode>
+          value={repeatMode}
+          onChange={setRepeatMode}
+          options={[
+            { value: 'none', label: t('repeat.none') },
+            { value: 'biweekly', label: t('repeat.biweekly') },
+            { value: 'monthly', label: t('repeat.monthly') },
+            { value: 'yearly', label: t('repeat.yearly') },
+            { value: 'custom', label: t('repeat.custom') },
+          ]}
+        />
+        {repeatMode === 'custom' ? (
+          <View style={styles.customRow}>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t('repeat.every')}
+            </ThemedText>
+            <View style={[styles.stepper, { backgroundColor: theme.backgroundElement }]}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="-"
+                onPress={() => setCustom((c) => ({ ...c, every: Math.max(1, c.every - 1) }))}
+                style={styles.stepBtn}>
+                <SymbolIcon ios="minus" material="remove" color={theme.text} size={16} />
+              </Pressable>
+              <ThemedText style={styles.stepValue}>{custom.every}</ThemedText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="+"
+                onPress={() => setCustom((c) => ({ ...c, every: Math.min(99, c.every + 1) }))}
+                style={styles.stepBtn}>
+                <SymbolIcon ios="plus" material="add" color={theme.text} size={16} />
+              </Pressable>
+            </View>
+            <ChoiceChips<Repeat['unit']>
+              value={custom.unit}
+              onChange={(unit) => setCustom((c) => ({ ...c, unit }))}
+              options={UNITS.map((unit) => ({ value: unit, label: t(`repeat.${unit}` as const) }))}
+            />
+          </View>
+        ) : null}
+      </View>
+
       <TextField
         label={t('event.descLabel')}
         placeholder={t('event.descPlaceholder')}
@@ -156,6 +217,10 @@ export default function AddEventScreen() {
 }
 
 const styles = StyleSheet.create({
+  customRow: { gap: Spacing.two },
+  stepper: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', borderRadius: 16 },
+  stepBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  stepValue: { minWidth: 36, textAlign: 'center', fontSize: 17, fontWeight: '600' },
   timeRow: { flexDirection: 'row', gap: Spacing.two },
   timeField: { flex: 1, height: 56, borderRadius: 16, paddingHorizontal: Spacing.three, flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   timeText: { fontSize: 17, fontWeight: '500' },
