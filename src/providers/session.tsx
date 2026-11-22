@@ -1,4 +1,5 @@
 import { useI18n } from '@/i18n';
+import type { StringKey } from '@/i18n/en';
 import { createContext, useCallback, useContext, useMemo, useState, type PropsWithChildren } from 'react';
 
 export type AuthMethod = 'apple' | 'google' | 'email';
@@ -92,6 +93,53 @@ const demoPet = (name: string): Pet => ({
   verified: true,
 });
 
+/** Demo events around today, of every kind (some repeat), so the calendar has plenty to show. */
+const DEMO_EVENT_COUNT = 27;
+function demoEvents(descriptions: string[]): PetEvent[] {
+  const day = (offset: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+  const list: [number, EventKind, string | null, Repeat | null][] = [
+    [0, 'vet', '10:00', null],
+    [0, 'vaccine', '10:30', null],
+    [0, 'grooming', '15:00', null],
+    [0, 'medication', '20:00', null],
+    [0, 'other', null, null],
+    [1, 'vet', '09:30', null],
+    [1, 'other', '18:00', null],
+    [2, 'medication', '08:00', { every: 2, unit: 'week' }],
+    [3, 'grooming', '12:00', null],
+    [3, 'other', '17:30', null],
+    [4, 'vaccine', '11:00', null],
+    [4, 'vet', '14:30', null],
+    [5, 'other', null, null],
+    [6, 'grooming', '13:00', { every: 1, unit: 'month' }],
+    [7, 'medication', '09:00', null],
+    [8, 'vet', '16:00', null],
+    [9, 'other', '19:00', null],
+    [10, 'vaccine', '10:00', { every: 1, unit: 'year' }],
+    [12, 'grooming', '11:30', null],
+    [14, 'vet', '12:00', null],
+    [15, 'medication', null, null],
+    [17, 'other', '10:30', null],
+    [20, 'vet', '15:30', null],
+    [-3, 'other', '18:00', null],
+    [-5, 'vet', '16:30', null],
+    [-9, 'vaccine', '09:30', null],
+    [-14, 'grooming', '14:00', null],
+  ];
+  return list.map(([offset, kind, time, repeat], index) => ({
+    id: `demo-${index}`,
+    kind,
+    description: descriptions[index] ?? '',
+    time,
+    repeat,
+    date: day(offset),
+  }));
+}
+
 function emailFor(method: AuthMethod, email: string | undefined, isNew: boolean) {
   if (email) return email;
   return `${isNew ? 'new.' : ''}${method}.user@example.com`;
@@ -106,6 +154,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const signIn = useCallback(async (method: AuthMethod, email?: string) => {
     await wait();
     setSession({ method, email: emailFor(method, email, false), ownerName: t('demo.owner'), pet: demoPet(t('demo.pet')) });
+    setEvents(demoEvents(Array.from({ length: DEMO_EVENT_COUNT }, (_, i) => t(`demo.e${i}` as StringKey))));
   }, [t]);
 
   const signUp = useCallback(async (method: AuthMethod, email?: string) => {

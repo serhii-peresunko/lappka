@@ -5,14 +5,14 @@ import { SymbolIcon } from '@/components/ui/symbol-icon';
 import { useI18n } from '@/i18n';
 
 /** A dashed placeholder next to the pet card: it shows that one more pet can be added. */
-export function AddCardTile({ width, height, mini }: { width: number; height: number; mini?: boolean }) {
+export function AddCardTile({ width, height }: { width: number; height: number }) {
   const { t } = useI18n();
   return (
     <View accessibilityLabel={t('card.add')} style={[styles.tile, { width, height }]}>
       <View style={styles.plus}>
         <SymbolIcon ios="plus" material="add" color="#111111" size={22} />
       </View>
-      {mini ? null : <ThemedText style={styles.label}>{t('card.add')}</ThemedText>}
+      <ThemedText style={styles.label}>{t('card.add')}</ThemedText>
     </View>
   );
 }
