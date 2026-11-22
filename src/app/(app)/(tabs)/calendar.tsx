@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { EventTimeline, groupByDay } from '@/components/event-timeline';
 import { SymbolIcon } from '@/components/ui/symbol-icon';
 import { MonthCalendar } from '@/components/ui/month-calendar';
 import { Spacing, TAB_BAR_SPACE } from '@/constants/theme';
@@ -79,26 +80,7 @@ export default function CalendarScreen() {
                   <SymbolIcon ios="plus" material="add" color="#FFFFFF" size={16} />
                 </Pressable>
               </View>
-              {dayEvents.map((event) => (
-                <View key={event.id} style={styles.row}>
-                  <ThemedText type="smallBold" style={styles.time}>
-                    {event.time ?? '—'}
-                  </ThemedText>
-                  <View style={[styles.badge, { backgroundColor: `${KIND_COLORS[event.kind]}26` }]}>
-                    <SymbolIcon {...KIND_ICONS[event.kind]} color={KIND_COLORS[event.kind]} size={18} />
-                  </View>
-                  <View style={styles.flex}>
-                    <ThemedText style={styles.eventTitle} numberOfLines={1}>
-                      {t(kindKey(event.kind))}
-                    </ThemedText>
-                    {event.description ? (
-                      <ThemedText type="small" themeColor="textSecondary" numberOfLines={2}>
-                        {event.description}
-                      </ThemedText>
-                    ) : null}
-                  </View>
-                </View>
-              ))}
+              {dayEvents.length > 0 ? <EventTimeline groups={groupByDay(dayEvents)} /> : null}
             </View>
           </View>
         </ScrollView>
@@ -119,8 +101,4 @@ const styles = StyleSheet.create({
   dayHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   dayTitle: { fontSize: 20, fontWeight: '600' },
   newBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, width: 44, height: 44, justifyContent: 'center', borderRadius: 22, backgroundColor: '#111111' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two },
-  time: { width: 48 },
-  badge: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  eventTitle: { fontSize: 16, fontWeight: '600', lineHeight: 22 },
 });

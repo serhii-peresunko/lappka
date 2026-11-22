@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   // Cancels the page's side padding so the row can run to the screen edges.
   // The extra top margin and the slimmer bottom padding make the space above the card (to the owner) and below it
   // (past the dots, to the next title) look equal.
-  wrap: { marginHorizontal: -Spacing.four, marginTop: 14, marginBottom: 0, gap: Spacing.three },
+  wrap: { marginHorizontal: -Spacing.four, marginTop: 4, marginBottom: 0, gap: Spacing.two },
   // Lines up with the page's side padding (the row itself runs to the screen edges).
   // Lines up with the page's side padding (the row itself runs to the screen edges).
   title: { paddingHorizontal: Spacing.four, fontSize: 20, fontWeight: '600' },

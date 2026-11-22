@@ -65,7 +65,7 @@ export function FloatingTabBar({ state, emitter, navigateToTab }: TabBarProps) {
                     const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
                     if (!focused && !event.defaultPrevented) navigateToTab(route.key);
                   }}
-                  style={[styles.item, focused && { backgroundColor: 'rgba(0,0,0,0.07)' }]}>
+                  style={[styles.item, focused && styles.itemActive]}>
                   <SymbolIcon
                     ios={item.ios}
                     material={item.material}
@@ -94,6 +94,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     elevation: 8,
   },
+  tint: { ...(StyleSheet.absoluteFill as object), backgroundColor: 'rgba(255,255,255,0.78)' },
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -103,9 +104,10 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,255,255,0.7)',
   },
-  tint: { ...(StyleSheet.absoluteFill as object), backgroundColor: 'rgba(255,255,255,0.55)' },
   // Every button gets an equal-width slot, so the icons are evenly spaced and the + is dead centre.
   slot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  // The buttons have no fill of their own; only the open tab is marked with a faint tint.
+  itemActive: { backgroundColor: 'rgba(0,0,0,0.07)' },
   item: { height: 44, width: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   add: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
 });

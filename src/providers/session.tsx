@@ -70,6 +70,10 @@ type SessionContextValue = {
   removePet: () => void;
   events: PetEvent[];
   addEvent: (event: Omit<PetEvent, 'id'>) => void;
+  /** Changes an event. A repeating event is changed as a whole (all its repeats). */
+  updateEvent: (id: string, event: Omit<PetEvent, 'id'>) => void;
+  /** Deletes an event (and, if it repeats, all its repeats). */
+  removeEvent: (id: string) => void;
   signOut: () => void;
 };
 
@@ -174,6 +178,14 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setEvents((current) => [...current, { ...event, id: `${Date.now()}-${current.length}` }]);
   }, []);
 
+  const updateEvent = useCallback((id: string, event: Omit<PetEvent, 'id'>) => {
+    setEvents((current) => current.map((item) => (item.id === id ? { ...event, id } : item)));
+  }, []);
+
+  const removeEvent = useCallback((id: string) => {
+    setEvents((current) => current.filter((item) => item.id !== id));
+  }, []);
+
   const setPetPhoto = useCallback((photo: string | null) => {
     setSession((current) => (current?.pet ? { ...current, pet: { ...current.pet, photo } } : current));
   }, []);
@@ -191,8 +203,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
   }, []);
 
   const value = useMemo(
-    () => ({ session, draftPetType, setDraftPetType, signIn, signUp, saveOwnerName, savePet, setPetPhoto, removePet, events, addEvent, signOut }),
-    [session, draftPetType, signIn, signUp, saveOwnerName, savePet, setPetPhoto, removePet, events, addEvent, signOut]
+    () => ({ session, draftPetType, setDraftPetType, signIn, signUp, saveOwnerName, savePet, setPetPhoto, removePet, events, addEvent, updateEvent, removeEvent, signOut }),
+    [session, draftPetType, signIn, signUp, saveOwnerName, savePet, setPetPhoto, removePet, events, addEvent, updateEvent, removeEvent, signOut]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

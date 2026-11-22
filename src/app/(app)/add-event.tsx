@@ -1,7 +1,7 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
@@ -11,10 +11,10 @@ import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
-  formatDateInput,
   isoToInput,
   parseDateInput,
   todayIso,
+  toIso,
 } from '@/lib/dates';
 import { EVENT_KIND_ORDER, KIND_ICONS, kindKey } from '@/lib/event-kinds';
 import { useI18n } from '@/i18n';
@@ -40,39 +40,69 @@ function repeatFor(mode: RepeatMode, custom: Repeat): Repeat | null {
   return null;
 }
 
+/** Which repeat button an existing repeat matches (anything else is "custom"). */
+function modeOf(repeat: Repeat | null | undefined): RepeatMode {
+  if (!repeat) return 'none';
+  if (repeat.every === 2 && repeat.unit === 'week') return 'biweekly';
+  if (repeat.every === 1 && repeat.unit === 'month') return 'monthly';
+  if (repeat.every === 1 && repeat.unit === 'year') return 'yearly';
+  return 'custom';
+}
+
 const UNITS: Repeat['unit'][] = ['day', 'week', 'month', 'year'];
 
 /** Add an event to the calendar: what, which kind, which day and (optionally) what time. */
 export default function AddEventScreen() {
   const router = useRouter();
-  const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
-  const { addEvent } = useSession();
-  const { t } = useI18n();
+  const { date: dateParam, id } = useLocalSearchParams<{ date?: string; id?: string }>();
+  const { addEvent, updateEvent, removeEvent, events } = useSession();
+  // With an id the form edits that event; without one it creates a new one.
+  const editing = id ? events.find((item) => item.id === id) : undefined;
+  const { t, locale } = useI18n();
   const theme = useTheme();
 
-  const [description, setDescription] = useState('');
-  const [kind, setKind] = useState<EventKind>('vet');
-  const [dateText, setDateText] = useState(isoToInput(dateParam ?? todayIso()));
-  const [time, setTime] = useState('');
+  const [description, setDescription] = useState(editing?.description ?? '');
+  const [kind, setKind] = useState<EventKind>(editing?.kind ?? 'vet');
+  const [dateText, setDateText] = useState(isoToInput(editing?.date ?? dateParam ?? todayIso()));
+  const [time, setTime] = useState(editing?.time ?? '');
   const [pickingTime, setPickingTime] = useState(false);
-  const [repeatMode, setRepeatMode] = useState<RepeatMode>('none');
-  const [custom, setCustom] = useState<Repeat>({ every: 2, unit: 'week' });
-  const [submitted, setSubmitted] = useState(false);
+  const [pickingDate, setPickingDate] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>(() => modeOf(editing?.repeat));
+  const [custom, setCustom] = useState<Repeat>(editing?.repeat ?? { every: 2, unit: 'week' });
 
   const date = parseDateInput(dateText);
+  // The picker works with a real date; the form keeps the ISO day. The label reads like the calendar's: "неділя, 6 грудня 2026".
+  const pickedDate = new Date(`${date ?? todayIso()}T12:00:00`);
+  const dateLabel = pickedDate.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const errors = {
     date: date ? undefined : t('event.errDate'),
   };
 
   function save() {
-    setSubmitted(true);
     if (errors.date || !date) return;
-    addEvent({ description: description.trim(), kind, date, time: time || null, repeat: repeatFor(repeatMode, custom) });
+    const fields = { description: description.trim(), kind, date, time: time || null, repeat: repeatFor(repeatMode, custom) };
+    if (editing) updateEvent(editing.id, fields);
+    else addEvent(fields);
     router.back();
   }
 
+  function askDelete() {
+    if (!editing) return;
+    Alert.alert(t('event.deleteTitle'), editing.repeat ? t('event.deleteRepeating') : t('event.deleteMessage'), [
+      { text: t('petMenu.cancel'), style: 'cancel' },
+      {
+        text: t('event.delete'),
+        style: 'destructive',
+        onPress: () => {
+          removeEvent(editing.id);
+          router.back();
+        },
+      },
+    ]);
+  }
+
   return (
-    <FormScreen title={t('event.title')} sheet>
+    <FormScreen title={t(editing ? 'event.editTitle' : 'event.title')} sheet>
       <View style={{ gap: Spacing.two }}>
         <ThemedText type="small" themeColor="textSecondary">
           {t('event.type')}
@@ -103,15 +133,30 @@ export default function AddEventScreen() {
         </View>
       </View>
 
-      <TextField
-        label={t('event.date')}
-        placeholder={t('datePlaceholder')}
-        value={dateText}
-        onChangeText={(text) => setDateText(formatDateInput(text))}
-        error={submitted ? errors.date : undefined}
-        keyboardType="number-pad"
-        maxLength={10}
-      />
+      <View style={{ gap: Spacing.two }}>
+        <ThemedText type="small" themeColor="textSecondary">
+          {t('event.date')}
+        </ThemedText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('event.date')}
+          onPress={() => setPickingDate((open) => !open)}
+          style={[styles.timeField, { backgroundColor: theme.backgroundElement }]}>
+          <SymbolIcon ios="calendar" material="calendar_month" color={theme.textSecondary} size={20} />
+          <ThemedText style={styles.timeText}>{dateLabel}</ThemedText>
+        </Pressable>
+        {pickingDate ? (
+          <DateTimePicker
+            mode="date"
+            locale={locale}
+            accentColor="#111111"
+            display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            value={pickedDate}
+            onValueChange={(_, picked) => setDateText(isoToInput(toIso(picked)))}
+            onDismiss={() => setPickingDate(false)}
+          />
+        ) : null}
+      </View>
 
       <View style={{ gap: Spacing.two }}>
         <ThemedText type="small" themeColor="textSecondary">
@@ -145,6 +190,8 @@ export default function AddEventScreen() {
         {pickingTime ? (
           <DateTimePicker
             mode="time"
+            locale={locale}
+            accentColor="#111111"
             is24Hour
             display={Platform.OS === 'ios' ? 'spinner' : 'default'}
             value={timeToDate(time || '09:00')}
@@ -211,12 +258,20 @@ export default function AddEventScreen() {
       />
 
       {/* Inline, not pinned: in a sheet the keyboard would cover a pinned footer. */}
-      <Button title={t('event.save')} onPress={save} />
+      <Button title={t(editing ? 'event.saveChanges' : 'event.save')} onPress={save} />
+      {editing ? (
+        <Pressable accessibilityRole="button" onPress={askDelete} style={({ pressed }) => [styles.deleteBtn, pressed && { opacity: 0.7 }]}>
+          <SymbolIcon ios="trash" material="delete" color="#C0392B" size={18} />
+          <ThemedText style={styles.deleteText}>{t('event.delete')}</ThemedText>
+        </Pressable>
+      ) : null}
     </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, borderRadius: 16, backgroundColor: 'rgba(192,57,43,0.08)' },
+  deleteText: { color: '#C0392B', fontSize: 16, lineHeight: 20, fontWeight: '500' },
   customRow: { gap: Spacing.two },
   stepper: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', borderRadius: 16 },
   stepBtn: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },

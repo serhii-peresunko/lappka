@@ -5,6 +5,7 @@ export default function AppLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="settings" />
+      <Stack.Screen name="events" />
       <Stack.Screen
         name="add-event"
         options={{

@@ -40,3 +40,13 @@ export function expandEvents(events: PetEvent[], from: string, to: string): PetE
   }
   return out;
 }
+
+/** Every event from today on (a year ahead), repeats included, in time order. */
+export function upcomingEvents(events: PetEvent[]): PetEvent[] {
+  const today = toIso(new Date());
+  const end = new Date(`${today}T12:00:00`);
+  end.setFullYear(end.getFullYear() + 1);
+  return expandEvents(events, today, toIso(end)).sort((a, b) =>
+    `${a.date} ${a.time ?? ''}`.localeCompare(`${b.date} ${b.time ?? ''}`)
+  );
+}
