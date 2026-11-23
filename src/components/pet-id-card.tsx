@@ -11,8 +11,8 @@ import { useI18n } from '@/i18n';
 import { ageText, isoToInput } from '@/lib/dates';
 import { useSession } from '@/providers/session';
 
-// Placeholder until pets can upload their own photo.
-export const PET_PHOTO = require('../../assets/images/welcome-dog-card.jpg');
+// The demo pet's photo, until pets can upload their own.
+export const PET_PHOTO = require('../../assets/images/pet-photo.jpg');
 
 // Security-style guilloche: evenly spaced parallel waves, each shifted slightly from the one above, so
 // together they flow like one smooth ribbon (neat, like the pattern on an ID card or banknote).

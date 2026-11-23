@@ -11,7 +11,7 @@ import { KIND_COLORS, KIND_ICONS } from '@/lib/event-kinds';
 import type { EventKind } from '@/providers/session';
 import { monthGrid, todayIso } from '@/lib/dates';
 
-const DOTS_PER_ROW = 2;
+const DOTS_PER_ROW = 3;
 const ICON = 14;
 const MAX_DOTS = DOTS_PER_ROW * 2;
 const WEEKDAY_KEYS = ['cal.wd0', 'cal.wd1', 'cal.wd2', 'cal.wd3', 'cal.wd4', 'cal.wd5', 'cal.wd6'] as const;
@@ -115,7 +115,7 @@ export function MonthCalendar({ selected, onSelect, dotsByDay }: MonthCalendarPr
                   {cell.day}
                 </ThemedText>
               </View>
-              <View style={styles.dots}>
+              <View style={[styles.dots, dots.length <= DOTS_PER_ROW && styles.dotsSingle]}>
                 {splitInTwo(dots.slice(0, MAX_DOTS)).map((row, rowIndex) => (
                   <View key={rowIndex} style={styles.dotRow}>
                     {row.map((kind, index) => (
@@ -148,6 +148,9 @@ const styles = StyleSheet.create({
   cell: { width: `${100 / 7}%`, minHeight: 48, alignItems: 'center', justifyContent: 'flex-start', paddingVertical: 2, gap: 2 },
   day: { width: 36, height: 36, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   // A single row stays centered under the number; once it wraps, rows start at the left edge.
-  dots: { alignItems: 'center', gap: 2 },
+  // A fixed-width block (two icons wide) under the number; the icons start at its left edge instead of being centred.
+  // One row of up to three: centred under the number (two icons sit in the middle). More than that starts at the left edge.
+  dotsSingle: { alignItems: 'center' },
+  dots: { width: DOTS_PER_ROW * ICON + (DOTS_PER_ROW - 1) * 2, alignItems: 'flex-start', gap: 2 },
   dotRow: { flexDirection: 'row', gap: 2 },
 });

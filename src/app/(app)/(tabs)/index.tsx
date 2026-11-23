@@ -1,7 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo } from 'react';
-import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -19,7 +18,6 @@ const MAX_EVENTS = 60;
 /** Home tab, laid out as a bento grid: the next event (dark), the pet (peach), achievements, then what is coming up. */
 export default function HomeScreen() {
   const { t } = useI18n();
-  const router = useRouter();
   const { session, events } = useSession();
   const pet = session?.pet;
 
@@ -53,13 +51,7 @@ export default function HomeScreen() {
 
             {upcoming.length > 0 ? (
               <View style={styles.section}>
-                <View style={styles.titleRow}>
-                  <ThemedText style={styles.sectionTitle}>{t('home.comingUp')}</ThemedText>
-                  <Pressable accessibilityRole="button" hitSlop={10} onPress={() => router.push('/events')} style={styles.allBtn}>
-                    <ThemedText style={styles.allText}>{t('home.all')}</ThemedText>
-                    <SymbolIcon ios="chevron.right" material="chevron_right" color="#111111" size={13} />
-                  </Pressable>
-                </View>
+                <ThemedText style={styles.sectionTitle}>{t('home.comingUp')}</ThemedText>
                 {/* The box takes the space that is left; the list scrolls inside it. */}
                 <View style={styles.listBox}>
                   <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false} contentContainerStyle={styles.listContent}>
@@ -109,8 +101,5 @@ const styles = StyleSheet.create({
   // The list runs to the bottom edge, under the menu; its last row can still be scrolled clear of it.
   listContent: { paddingBottom: TAB_BAR_SPACE },
   listBox: { flex: 1, overflow: 'hidden' },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  allBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, height: 32, borderRadius: 16, backgroundColor: '#EDEDEF' },
-  allText: { color: '#111111', fontSize: 14, lineHeight: 18, fontWeight: '500' },
   sectionTitle: { fontSize: 20, fontWeight: '600' },
 });

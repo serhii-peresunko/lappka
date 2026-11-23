@@ -98,7 +98,7 @@ const demoPet = (name: string): Pet => ({
 });
 
 /** Demo events around today, of every kind (some repeat), so the calendar has plenty to show. */
-const DEMO_EVENT_COUNT = 27;
+const DEMO_EVENT_COUNT = 32;
 function demoEvents(descriptions: string[]): PetEvent[] {
   const day = (offset: number) => {
     const date = new Date();
@@ -133,6 +133,11 @@ function demoEvents(descriptions: string[]): PetEvent[] {
     [-5, 'vet', '16:30', null],
     [-9, 'vaccine', '09:30', null],
     [-14, 'grooming', '14:00', null],
+    [-1, 'vet', '09:00', null],
+    [-1, 'grooming', '11:00', null],
+    [-1, 'medication', '13:00', null],
+    [-1, 'vaccine', '15:30', null],
+    [-1, 'other', '18:30', null],
   ];
   return list.map(([offset, kind, time, repeat], index) => ({
     id: `demo-${index}`,

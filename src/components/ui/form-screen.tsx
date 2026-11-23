@@ -1,7 +1,7 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 import { SymbolView } from 'expo-symbols';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -27,12 +27,15 @@ type FormScreenProps = PropsWithChildren<{
 export function FormScreen({ title, subtitle, eyebrow, footer, bottom, onBack, sheet, children }: FormScreenProps) {
   const theme = useTheme();
   const { t } = useI18n();
+  const insets = useSafeAreaInsets();
+  // Only the top is protected by the safe area; the scroll runs to the very bottom edge and pads itself by the
+  // home-indicator height, so content scrolls off the screen instead of being cut off above it.
   return (
     <ThemedView style={styles.root}>
-      <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+      <SafeAreaView style={styles.root} edges={['top']}>
         <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' && !sheet ? 'padding' : undefined}>
           <ScrollView
-            contentContainerStyle={[styles.scroll, bottom && styles.bottom]}
+            contentContainerStyle={[styles.scroll, { paddingBottom: Spacing.four + (footer ? 0 : insets.bottom) }, bottom && styles.bottom]}
             automaticallyAdjustKeyboardInsets={sheet}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
@@ -65,7 +68,7 @@ export function FormScreen({ title, subtitle, eyebrow, footer, bottom, onBack, s
             </View>
           </ScrollView>
           {footer ? (
-            <View style={styles.footer}>
+            <View style={[styles.footer, { paddingBottom: Spacing.three + insets.bottom }]}>
               <View style={styles.footerInner}>{footer}</View>
             </View>
           ) : null}

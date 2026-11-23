@@ -46,7 +46,7 @@ export function monthGrid(year: number, month: number) {
 }
 
 /** "2 years 3 months" / "2 роки 3 місяці"; for a birth date it counts from today, for an estimate it uses the months given. */
-export function ageText(birthDate: string | null, approxMonths: number | null, lang: Lang = 'uk'): string {
+export function ageText(birthDate: string | null, approxMonths: number | null, lang: Lang = 'uk', short = false): string {
   let months = approxMonths ?? 0;
   if (birthDate) {
     const [y, m, d] = birthDate.split('-').map(Number);
@@ -57,10 +57,11 @@ export function ageText(birthDate: string | null, approxMonths: number | null, l
   const years = Math.floor(months / 12);
   const rest = months % 12;
 
+  // Short form for tight spots: "3 р. 7 міс." / "3 y 7 mo".
   const yearWord = (n: number) =>
-    lang === 'uk' ? pluralUk(n, 'рік', 'роки', 'років') : n === 1 ? 'year' : 'years';
+    short ? (lang === 'uk' ? 'р.' : 'y') : lang === 'uk' ? pluralUk(n, 'рік', 'роки', 'років') : n === 1 ? 'year' : 'years';
   const monthWord = (n: number) =>
-    lang === 'uk' ? pluralUk(n, 'місяць', 'місяці', 'місяців') : n === 1 ? 'month' : 'months';
+    short ? (lang === 'uk' ? 'міс.' : 'mo') : lang === 'uk' ? pluralUk(n, 'місяць', 'місяці', 'місяців') : n === 1 ? 'month' : 'months';
 
   const parts = [
     years ? `${years} ${yearWord(years)}` : '',

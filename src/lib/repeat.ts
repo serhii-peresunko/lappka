@@ -50,3 +50,14 @@ export function upcomingEvents(events: PetEvent[]): PetEvent[] {
     `${a.date} ${a.time ?? ''}`.localeCompare(`${b.date} ${b.time ?? ''}`)
   );
 }
+
+/** The latest vaccination event that has already happened (today counts), repeats included; null if there is none. */
+export function lastVaccination(events: PetEvent[]): PetEvent | null {
+  const today = toIso(new Date());
+  const past = expandEvents(
+    events.filter((event) => event.kind === 'vaccine'),
+    '2000-01-01',
+    today
+  ).sort((a, b) => `${a.date} ${a.time ?? ''}`.localeCompare(`${b.date} ${b.time ?? ''}`));
+  return past.length > 0 ? past[past.length - 1] : null;
+}
