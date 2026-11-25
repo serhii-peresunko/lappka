@@ -23,7 +23,7 @@ export function PetCardPager() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginTop: 4, gap: Spacing.two },
+  wrap: { gap: Spacing.three },
   title: { fontSize: 20, fontWeight: '600' },
   cardBox: { paddingVertical: Spacing.two },
 });

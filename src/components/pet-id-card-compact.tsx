@@ -1,9 +1,9 @@
-import Svg, { Path } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
-import { PetMenuButton } from '@/components/pet-menu';
 import { countryLabel, Fact, guilloche, PET_PHOTO } from '@/components/pet-id-card';
+import { PetMenuButton } from '@/components/pet-menu';
 import { ThemedText } from '@/components/themed-text';
 import { PetArt } from '@/components/ui/pet-art';
 import { PetPhoto } from '@/components/ui/pet-photo';
@@ -93,16 +93,14 @@ export function PetIdCardCompact({ width: cardWidth }: { width: number }) {
             </View>
 
             {/* The last vaccination that has already happened: what it was (the event's note, else "Vaccination"), and when. */}
-            {vaccine ? (
-              <Fact
-                label={t('petId.lastVaccine')}
-                value={vaccine.description || t('kind.vaccine')}
-                extra={isoToInput(vaccine.date)}
-                flex={0}
-                dark
-                compact
-              />
-            ) : null}
+            <Fact
+              label={t('petId.lastVaccine')}
+              value={vaccine ? vaccine.description || t('kind.vaccine') : '-'}
+              extra={vaccine ? isoToInput(vaccine.date) : undefined}
+              flex={0}
+              dark
+              compact
+            />
           </View>
         </View>
 

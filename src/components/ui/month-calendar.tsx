@@ -3,17 +3,16 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { SymbolIcon } from '@/components/ui/symbol-icon';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { SymbolIcon } from '@/components/ui/symbol-icon';
 import { useI18n } from '@/i18n';
+import { monthGrid, todayIso } from '@/lib/dates';
 import { KIND_COLORS, KIND_ICONS } from '@/lib/event-kinds';
 import type { EventKind } from '@/providers/session';
-import { monthGrid, todayIso } from '@/lib/dates';
 
-const DOTS_PER_ROW = 3;
-const ICON = 14;
-const MAX_DOTS = DOTS_PER_ROW * 2;
+const MAX_VISIBLE_KINDS = 2;
+const ICON = 11;
 const WEEKDAY_KEYS = ['cal.wd0', 'cal.wd1', 'cal.wd2', 'cal.wd3', 'cal.wd4', 'cal.wd5', 'cal.wd6'] as const;
 
 type MonthCalendarProps = {
@@ -23,12 +22,6 @@ type MonthCalendarProps = {
   /** Event kinds per day (YYYY-MM-DD), one small icon per event; drawn 4 per row, up to 2 rows. */
   dotsByDay: Map<string, EventKind[]>;
 };
-
-/** Lays items out in at most two lines of two: 1 -> [1], 2 -> [2], 3 -> [2,1], 4 -> [2,2]. */
-function splitInTwo<T>(items: T[]): T[][] {
-  if (items.length === 0) return [];
-  return [items.slice(0, DOTS_PER_ROW), items.slice(DOTS_PER_ROW)].filter((row) => row.length > 0);
-}
 
 /** A month grid with prev / next, a highlighted today and a dot under days with events. */
 export function MonthCalendar({ selected, onSelect, dotsByDay }: MonthCalendarProps) {
@@ -90,12 +83,18 @@ export function MonthCalendar({ selected, onSelect, dotsByDay }: MonthCalendarPr
         {cells.map((cell) => {
           const isSelected = cell.iso === selected;
           const isToday = cell.iso === today;
-          const dots = dotsByDay.get(cell.iso) ?? [];
+          const kinds = dotsByDay.get(cell.iso) ?? [];
+          const dateLabel = new Date(`${cell.iso}T12:00:00`).toLocaleDateString(locale, {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          });
           return (
             <Pressable
               key={cell.iso}
               accessibilityRole="button"
-              accessibilityLabel={cell.iso}
+              accessibilityLabel={dateLabel}
               accessibilityState={{ selected: isSelected }}
               onPress={() => onSelect(cell.iso)}
               style={styles.cell}>
@@ -115,14 +114,13 @@ export function MonthCalendar({ selected, onSelect, dotsByDay }: MonthCalendarPr
                   {cell.day}
                 </ThemedText>
               </View>
-              <View style={[styles.dots, dots.length <= DOTS_PER_ROW && styles.dotsSingle]}>
-                {splitInTwo(dots.slice(0, MAX_DOTS)).map((row, rowIndex) => (
-                  <View key={rowIndex} style={styles.dotRow}>
-                    {row.map((kind, index) => (
-                      <SymbolIcon key={index} {...KIND_ICONS[kind]} color={KIND_COLORS[kind]} size={ICON} />
-                    ))}
-                  </View>
+              <View style={styles.dots}>
+                {kinds.slice(0, MAX_VISIBLE_KINDS).map((kind) => (
+                  <SymbolIcon key={kind} {...KIND_ICONS[kind]} color={KIND_COLORS[kind]} size={ICON} />
                 ))}
+                {kinds.length > MAX_VISIBLE_KINDS ? (
+                  <ThemedText style={styles.moreKinds}>+{kinds.length - MAX_VISIBLE_KINDS}</ThemedText>
+                ) : null}
               </View>
             </Pressable>
           );
@@ -136,21 +134,17 @@ const styles = StyleSheet.create({
   root: { gap: Spacing.two, backgroundColor: '#FFFFFF' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: Spacing.two },
   titleWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  month: { fontSize: 17, lineHeight: 24, fontWeight: '700' },
-  year: { fontSize: 17, color: '#8A8A8A', fontWeight: '500' },
-  controls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  nav: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#FFFFFF', borderWidth: StyleSheet.hairlineWidth, borderColor: '#D8D8D8', alignItems: 'center', justifyContent: 'center' },
-  todayBtn: { height: 30, paddingHorizontal: 12, borderRadius: 15, backgroundColor: '#111111', alignItems: 'center', justifyContent: 'center' },
+  month: { fontSize: 18, lineHeight: 24, fontWeight: '700' },
+  year: { fontSize: 16, color: '#8A8A8A', fontWeight: '500' },
+  controls: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  nav: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: StyleSheet.hairlineWidth, borderColor: '#D8D8D8', alignItems: 'center', justifyContent: 'center' },
+  todayBtn: { height: 36, paddingHorizontal: 12, borderRadius: 18, backgroundColor: '#111111', alignItems: 'center', justifyContent: 'center' },
   todayText: { color: '#FFFFFF', fontSize: 13 },
   week: { flexDirection: 'row' },
   weekday: { flex: 1, textAlign: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  cell: { width: `${100 / 7}%`, minHeight: 48, alignItems: 'center', justifyContent: 'flex-start', paddingVertical: 2, gap: 2 },
-  day: { width: 36, height: 36, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  // A single row stays centered under the number; once it wraps, rows start at the left edge.
-  // A fixed-width block (two icons wide) under the number; the icons start at its left edge instead of being centred.
-  // One row of up to three: centred under the number (two icons sit in the middle). More than that starts at the left edge.
-  dotsSingle: { alignItems: 'center' },
-  dots: { width: DOTS_PER_ROW * ICON + (DOTS_PER_ROW - 1) * 2, alignItems: 'flex-start', gap: 2 },
-  dotRow: { flexDirection: 'row', gap: 2 },
+  cell: { width: `${100 / 7}%`, minHeight: 52, alignItems: 'center', justifyContent: 'flex-start', paddingVertical: 2, gap: 2 },
+  day: { width: 32, height: 32, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  dots: { width: 44, height: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2 },
+  moreKinds: { color: '#77777A', fontSize: 10, lineHeight: 12, fontWeight: '600' },
 });
