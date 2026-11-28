@@ -20,7 +20,7 @@ const CARD_HEIGHT = CARD_WIDTH;
 const GAP = 8;
 
 /**
- * The next events as square cards in a sideways row: the kind's name and note at the top; at the bottom the
+ * The next events as square cards in a sideways row: the kind's name at the top; at the bottom the
  * date and time on the left and the kind's icon on the right. A tap opens the event.
  */
 export function NextEvents() {
@@ -62,15 +62,10 @@ export function NextEvents() {
             accessibilityRole="button"
             onPress={() => openEvent(event)}
             style={({ pressed }) => [styles.card, pressed && { opacity: 0.7 }]}>
-            {/* Top: what it is, with the owner's note (or how to add one) right under it. */}
-            <View>
-              <ThemedText style={styles.title} numberOfLines={2}>
-                {t(kindKey(event.kind))}
-              </ThemedText>
-              <ThemedText style={styles.note} numberOfLines={2}>
-                {event.description || t('event.noDescription')}
-              </ThemedText>
-            </View>
+            {/* Top: what it is. The owner's note is shown when the event is opened. */}
+            <ThemedText style={styles.title} numberOfLines={2}>
+              {t(kindKey(event.kind))}
+            </ThemedText>
             {/* Bottom: the date (or "Today") over the time on the left, the kind's icon on the right. */}
             <View style={styles.bottom}>
               <View style={styles.when}>
@@ -106,8 +101,7 @@ const styles = StyleSheet.create({
   // Words are wider than digits, so "All day" is set smaller, on the same line height.
   allDay: { fontSize: 15, lineHeight: 32, fontWeight: '600' },
   date: { color: Colors.light.textSecondary, fontSize: 12, lineHeight: 15, fontWeight: '500' },
-  title: { fontSize: 20, lineHeight: 23, fontWeight: '700', letterSpacing: -0.5 },
-  note: { color: Colors.light.textSecondary, fontSize: 12, lineHeight: 15, fontWeight: '500', marginTop: 3 },
+  title: { fontSize: 17, lineHeight: 20, fontWeight: '700', letterSpacing: -0.4 },
   empty: { gap: 12, padding: 16, borderRadius: 12, backgroundColor: Colors.light.surface },
   emptyText: { color: Colors.light.textSecondary, fontSize: 14, lineHeight: 20, textAlign: 'center' },
 });

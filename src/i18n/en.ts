@@ -167,7 +167,6 @@ export const en = {
   'kind.medication': 'Medication',
   'kind.other': 'Other',
   'event.title': 'New event',
-  'event.noDescription': 'Add a description',
   'event.descLabel': 'Description (optional)',
   'event.descPlaceholder': 'e.g. Bring the vaccine passport',
   'event.type': 'Type',

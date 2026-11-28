@@ -169,7 +169,6 @@ export const uk: Record<StringKey, string> = {
   'kind.medication': 'Ліки',
   'kind.other': 'Інше',
   'event.title': 'Нова подія',
-  'event.noDescription': 'Додайте опис',
   'event.descLabel': 'Опис (необов’язково)',
   'event.descPlaceholder': 'напр. Взяти паспорт щеплень',
   'event.type': 'Тип',
