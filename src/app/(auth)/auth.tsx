@@ -10,6 +10,8 @@ import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 import { useI18n } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
+import { AuthFailure } from '@/lib/auth';
+import type { StringKey } from '@/i18n/en';
 import { useSession, type AuthMethod } from '@/providers/session';
 
 type Mode = 'sign-up' | 'sign-in';
@@ -45,12 +47,23 @@ export default function AuthScreen() {
       ? t('auth.errPasswordShort', { n: MIN_PASSWORD })
       : undefined;
 
-  async function run(method: AuthMethod, withEmail?: string) {
+  async function run(method: AuthMethod, withEmail?: string, withPassword?: string) {
     setPending(method);
     try {
-      await (isSignUp ? signUp(method, withEmail) : signIn(method, withEmail));
-    } catch {
-      Alert.alert(t('auth.failedTitle'), t('auth.failedBody'));
+      if (isSignUp) {
+        if ((await signUp(method, withEmail, withPassword)) === 'confirm') {
+          Alert.alert(t('auth.confirmTitle'), t('auth.confirmBody', { email: withEmail ?? '' }));
+          setMode('sign-in');
+          setPassword('');
+          setSubmitted(false);
+        }
+      } else {
+        await signIn(method, withEmail, withPassword);
+      }
+    } catch (error) {
+      const code = error instanceof AuthFailure ? error.code : 'unknown';
+      console.warn('Sign-in failed', code, error instanceof Error ? error.message : error);
+      Alert.alert(t('auth.failedTitle'), t(`auth.fail.${code}` as StringKey));
     } finally {
       setPending(null);
     }
@@ -59,7 +72,7 @@ export default function AuthScreen() {
   function submit() {
     setSubmitted(true);
     if (emailError || passwordError) return;
-    run('email', email.trim());
+    run('email', email.trim(), password);
   }
 
   return (
@@ -120,7 +133,7 @@ export default function AuthScreen() {
             variant="dark"
             title={isSignUp ? t('auth.appleUp') : t('auth.appleIn')}
             icon={
-              <SymbolView name={{ ios: 'apple.logo' }} tintColor={theme.background} size={18} fallback={<View />} />
+              <SymbolView name={{ ios: 'apple.logo' }} tintColor={theme.onPrimary} size={18} fallback={<View />} />
             }
             loading={pending === 'apple'}
             disabled={pending !== null}
@@ -170,6 +183,6 @@ const styles = StyleSheet.create({
   },
   line: {
     flex: 1,
-    height: StyleSheet.hairlineWidth,
+    height: 1,
   },
 });

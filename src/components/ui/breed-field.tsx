@@ -50,7 +50,7 @@ export function BreedField({ type, value, onChange, error }: BreedFieldProps) {
 
   return (
     <View style={styles.wrapper}>
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText type="smallBold" style={styles.fieldLabel}>
         {t('pet.breed')}
       </ThemedText>
       <Pressable
@@ -59,7 +59,7 @@ export function BreedField({ type, value, onChange, error }: BreedFieldProps) {
         onPress={() => setOpen(true)}
         style={[
           styles.field,
-          { backgroundColor: theme.backgroundElement, borderColor: error ? theme.danger : theme.border },
+          { backgroundColor: theme.surface, borderColor: error ? theme.danger : 'transparent' },
         ]}>
         {value ? <BreedIcon type={type} breed={value} size={32} /> : null}
         <ThemedText style={[styles.value, { color: value ? theme.text : theme.textSecondary }]} numberOfLines={1}>
@@ -100,7 +100,7 @@ export function BreedField({ type, value, onChange, error }: BreedFieldProps) {
             </View>
 
             <View
-              style={[styles.search, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+              style={[styles.search, { backgroundColor: theme.surface, borderColor: 'transparent' }]}>
               <SymbolView
                 name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
                 tintColor={theme.textSecondary}
@@ -113,6 +113,7 @@ export function BreedField({ type, value, onChange, error }: BreedFieldProps) {
                 placeholder={t('pet.searchBreeds')}
                 placeholderTextColor={theme.textSecondary}
                 autoCorrect={false}
+                maxLength={80}
                 style={[styles.input, { color: theme.text }]}
               />
             </View>
@@ -147,7 +148,7 @@ export function BreedField({ type, value, onChange, error }: BreedFieldProps) {
                     onPress={() => pick(item)}
                     style={[
                       styles.row,
-                      { backgroundColor: selected ? theme.primarySoft : theme.backgroundElement },
+                      { backgroundColor: selected ? theme.primarySoft : theme.surface },
                     ]}>
                     <BreedIcon type={type} breed={item} size={40} />
                     <ThemedText
@@ -175,6 +176,7 @@ export function BreedField({ type, value, onChange, error }: BreedFieldProps) {
 }
 
 const styles = StyleSheet.create({
+  fieldLabel: { paddingLeft: 4 },
   wrapper: {
     gap: Spacing.one + Spacing.half,
   },
@@ -182,10 +184,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
-    minHeight: 52,
+    minHeight: 54,
     paddingHorizontal: Spacing.three,
-    borderWidth: 1,
-    borderRadius: 14,
+    borderWidth: 1.5,
+    borderRadius: 16,
   },
   value: {
     flex: 1,
@@ -220,8 +222,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderWidth: 1,
-    borderRadius: 14,
-    minHeight: 48,
+    borderRadius: 8,
+    minHeight: 52,
   },
   input: {
     flex: 1,
@@ -242,7 +244,7 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     minHeight: 60,
     paddingHorizontal: Spacing.three - Spacing.one,
-    borderRadius: 14,
+    borderRadius: 8,
   },
   rowText: {
     flex: 1,

@@ -7,8 +7,9 @@ import { EventTimeline, groupByDay } from '@/components/event-timeline';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MonthCalendar } from '@/components/ui/month-calendar';
+import { IconButton } from '@/components/ui/icon-button';
 import { SymbolIcon } from '@/components/ui/symbol-icon';
-import { Spacing, TAB_BAR_SPACE } from '@/constants/theme';
+import { Colors, Radius, Spacing, TAB_BAR_SPACE } from '@/constants/theme';
 import { useI18n } from '@/i18n';
 import { todayIso } from '@/lib/dates';
 import { KIND_ICONS, kindKey } from '@/lib/event-kinds';
@@ -69,8 +70,6 @@ export default function CalendarScreen() {
       <SafeAreaView style={styles.root} edges={['top']}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.content}>
-            <ThemedText type="subtitle">{t('calendar.title')}</ThemedText>
-
             <MonthCalendar selected={selected} onSelect={setSelected} dotsByDay={dotsByDay} />
 
             <View style={styles.filters}>
@@ -83,8 +82,8 @@ export default function CalendarScreen() {
                     accessibilityLabel={item.label}
                     accessibilityState={{ selected: active }}
                     onPress={() => setFilter(item.value)}
-                    style={[styles.filterCard, active && styles.filterCardActive]}>
-                    <SymbolIcon {...item.icon} color={active ? '#FFFFFF' : '#111111'} size={20} />
+                    style={({ pressed }) => [styles.filterCard, active && styles.filterCardActive, pressed && { opacity: 0.7 }]}>
+                    <SymbolIcon {...item.icon} color={active ? Colors.light.onPrimary : Colors.light.text} size={18} />
                   </Pressable>
                 );
               })}
@@ -100,11 +99,9 @@ export default function CalendarScreen() {
                     </ThemedText>
                   ) : null}
                 </View>
-                <Pressable accessibilityRole="button" accessibilityLabel={t('tab.add')} onPress={() => router.push('/add-event')} style={styles.newBtn}>
-                  <SymbolIcon ios="plus" material="add" color="#FFFFFF" size={20} />
-                </Pressable>
+                <IconButton label={t('tab.add')} icon={{ ios: 'plus', material: 'add' }} tone="accent" onPress={() => router.push({ pathname: '/add-event', params: filter === 'all' ? { date: selected } : { date: selected, kind: filter } })} />
               </View>
-              {dayEvents.length > 0 ? <EventTimeline groups={groupByDay(dayEvents)} showDate={false} /> : null}
+              {dayEvents.length > 0 ? <EventTimeline groups={groupByDay(dayEvents)} /> : null}
             </View>
           </View>
         </ScrollView>
@@ -117,15 +114,12 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
-  scroll: { flexGrow: 1, paddingHorizontal: Spacing.four, paddingTop: Spacing.three, paddingBottom: TAB_BAR_SPACE },
-  content: { width: '100%', maxWidth: 460, alignSelf: 'center', gap: Spacing.three },
-  events: { gap: Spacing.three },
+  scroll: { flexGrow: 1, paddingHorizontal: Spacing.three, paddingTop: Spacing.two, paddingBottom: TAB_BAR_SPACE },
+  content: { width: '100%', maxWidth: 460, alignSelf: 'center', gap: 12 },
+  events: { gap: 10, paddingTop: 4 },
   filters: { flexDirection: 'row', gap: 6 },
-  filterCard: { flex: 1, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EFEFF1' },
-  filterCardActive: { backgroundColor: '#111111' },
-  filterText: { color: '#2B2B2B', fontSize: 10, lineHeight: 12, fontWeight: '500' },
-  filterTextActive: { color: '#FFFFFF' },
-  dayHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  dayTitle: { fontSize: 20, fontWeight: '600' },
-  newBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, width: 44, height: 44, justifyContent: 'center', borderRadius: 22, backgroundColor: '#111111' },
+  filterCard: { flex: 1, height: 40, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.light.surface },
+  filterCardActive: { backgroundColor: Colors.light.primary },
+  dayHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingLeft: 4 },
+  dayTitle: { fontSize: 18, lineHeight: 24, fontWeight: '600', letterSpacing: -0.2 },
 });

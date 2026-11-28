@@ -1,29 +1,25 @@
-import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { PanResponder, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { SymbolIcon } from '@/components/ui/symbol-icon';
-import { Spacing } from '@/constants/theme';
+import { IconButton } from '@/components/ui/icon-button';
+import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useI18n } from '@/i18n';
 import { monthGrid, todayIso } from '@/lib/dates';
-import { KIND_COLORS, KIND_ICONS } from '@/lib/event-kinds';
 import type { EventKind } from '@/providers/session';
 
-const MAX_VISIBLE_KINDS = 2;
-const ICON = 11;
 const WEEKDAY_KEYS = ['cal.wd0', 'cal.wd1', 'cal.wd2', 'cal.wd3', 'cal.wd4', 'cal.wd5', 'cal.wd6'] as const;
 
 type MonthCalendarProps = {
   /** Selected day, YYYY-MM-DD. */
   selected: string;
   onSelect: (iso: string) => void;
-  /** Event kinds per day (YYYY-MM-DD), one small icon per event; drawn 4 per row, up to 2 rows. */
+  /** Event kinds per day (YYYY-MM-DD); a day with any is filled yellow. */
   dotsByDay: Map<string, EventKind[]>;
 };
 
-/** A month grid with prev / next, a highlighted today and a dot under days with events. */
+/** A month grid with prev / next. Days with events are yellow, today is ringed, the chosen day is black. */
 export function MonthCalendar({ selected, onSelect, dotsByDay }: MonthCalendarProps) {
   const theme = useTheme();
   const { t, locale } = useI18n();
@@ -32,7 +28,9 @@ export function MonthCalendar({ selected, onSelect, dotsByDay }: MonthCalendarPr
     return { year: y, month: m - 1 };
   });
   const today = todayIso();
-  const cells = monthGrid(view.year, view.month);
+  // A sixth week that belongs wholly to the next month is dropped, so the day's events sit higher.
+  const grid = monthGrid(view.year, view.month);
+  const cells = grid.slice(35).some((cell) => cell.inMonth) ? grid : grid.slice(0, 35);
   const rawMonth = new Date(view.year, view.month, 1).toLocaleDateString(locale, { month: 'long' });
   const monthName = rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1);
   const now = new Date();
@@ -47,11 +45,29 @@ export function MonthCalendar({ selected, onSelect, dotsByDay }: MonthCalendarPr
     setView({ year: next.getFullYear(), month: next.getMonth() });
   };
 
+  // A sideways swipe over the grid turns the month; taps and vertical scrolling pass through.
+  const swipe = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 24 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
+        onPanResponderRelease: (_, g) => {
+          if (Math.abs(g.dx) < 48) return;
+          setView((current) => {
+            const next = new Date(current.year, current.month + (g.dx < 0 ? 1 : -1), 1);
+            return { year: next.getFullYear(), month: next.getMonth() };
+          });
+        },
+      }),
+    []
+  );
+
   return (
     <View style={styles.root}>
       <View style={styles.header}>
         <View style={styles.titleWrap}>
-          <ThemedText style={styles.month}>{monthName}</ThemedText>
+          <ThemedText style={styles.month} numberOfLines={1} adjustsFontSizeToFit>
+            {monthName}
+          </ThemedText>
           <ThemedText style={styles.year}>{view.year}</ThemedText>
         </View>
         <View style={styles.controls}>
@@ -62,15 +78,12 @@ export function MonthCalendar({ selected, onSelect, dotsByDay }: MonthCalendarPr
               </ThemedText>
             </Pressable>
           ) : null}
-          <Pressable accessibilityRole="button" accessibilityLabel={t('calendar.prev')} onPress={() => shift(-1)} style={styles.nav}>
-            <SymbolView name={{ ios: 'chevron.left', android: 'chevron_left', web: 'chevron_left' }} tintColor={theme.text} size={14} />
-          </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel={t('calendar.next')} onPress={() => shift(1)} style={styles.nav}>
-            <SymbolView name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }} tintColor={theme.text} size={14} />
-          </Pressable>
+          <IconButton label={t('calendar.prev')} icon={{ ios: 'chevron.left', material: 'chevron_left' }} size={40} onPress={() => shift(-1)} />
+          <IconButton label={t('calendar.next')} icon={{ ios: 'chevron.right', material: 'chevron_right' }} size={40} onPress={() => shift(1)} />
         </View>
       </View>
 
+      <View style={styles.card} {...swipe.panHandlers}>
       <View style={styles.week}>
         {WEEKDAY_KEYS.map((key) => (
           <ThemedText key={key} type="small" themeColor="textSecondary" style={styles.weekday}>
@@ -97,54 +110,44 @@ export function MonthCalendar({ selected, onSelect, dotsByDay }: MonthCalendarPr
               accessibilityLabel={dateLabel}
               accessibilityState={{ selected: isSelected }}
               onPress={() => onSelect(cell.iso)}
-              style={styles.cell}>
+              style={({ pressed }) => [styles.cell, pressed && { opacity: 0.6 }]}>
               <View
-                style={[
-                  styles.day,
-                  isSelected && { backgroundColor: theme.text },
-                  !isSelected && isToday && { backgroundColor: '#EFEFEF' },
-                ]}>
+                style={[styles.day, kinds.length > 0 && styles.dayMarked, isToday && styles.todayRing, isSelected && styles.daySelected]}>
                 <ThemedText
                   type="small"
                   style={{
-                    color: isSelected ? theme.background : cell.inMonth ? theme.text : theme.textSecondary,
-                    opacity: cell.inMonth || isSelected ? 1 : 0.5,
+                    color: isSelected ? theme.onPrimary : cell.inMonth ? theme.text : theme.textTertiary,
                     fontWeight: isSelected || isToday ? 700 : 500,
                   }}>
                   {cell.day}
                 </ThemedText>
               </View>
-              <View style={styles.dots}>
-                {kinds.slice(0, MAX_VISIBLE_KINDS).map((kind) => (
-                  <SymbolIcon key={kind} {...KIND_ICONS[kind]} color={KIND_COLORS[kind]} size={ICON} />
-                ))}
-                {kinds.length > MAX_VISIBLE_KINDS ? (
-                  <ThemedText style={styles.moreKinds}>+{kinds.length - MAX_VISIBLE_KINDS}</ThemedText>
-                ) : null}
-              </View>
             </Pressable>
           );
         })}
+      </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { gap: Spacing.two, backgroundColor: '#FFFFFF' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: Spacing.two },
-  titleWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  month: { fontSize: 18, lineHeight: 24, fontWeight: '700' },
-  year: { fontSize: 16, color: '#8A8A8A', fontWeight: '500' },
+  root: { gap: 14 },
+  card: { gap: Spacing.two, backgroundColor: Colors.light.surface, borderRadius: Radius.card, paddingHorizontal: 8, paddingTop: 14, paddingBottom: 6 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  titleWrap: { flex: 1, flexDirection: 'row', alignItems: 'baseline', gap: 6, paddingLeft: 4 },
+  month: { flexShrink: 1, fontSize: 24, lineHeight: 30, fontWeight: '600', letterSpacing: -0.4 },
+  year: { fontSize: 16, color: Colors.light.textSecondary, fontWeight: '500' },
   controls: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  nav: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: StyleSheet.hairlineWidth, borderColor: '#D8D8D8', alignItems: 'center', justifyContent: 'center' },
-  todayBtn: { height: 36, paddingHorizontal: 12, borderRadius: 18, backgroundColor: '#111111', alignItems: 'center', justifyContent: 'center' },
-  todayText: { color: '#FFFFFF', fontSize: 13 },
+  todayBtn: { height: 40, paddingHorizontal: 14, borderRadius: Radius.pill, backgroundColor: Colors.light.primary, alignItems: 'center', justifyContent: 'center' },
+  todayText: { color: Colors.light.onPrimary, fontSize: 13 },
   week: { flexDirection: 'row' },
-  weekday: { flex: 1, textAlign: 'center' },
+  weekday: { flex: 1, textAlign: 'center', color: Colors.light.textSecondary, fontSize: 11, lineHeight: 16, fontWeight: '500' },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  cell: { width: `${100 / 7}%`, minHeight: 52, alignItems: 'center', justifyContent: 'flex-start', paddingVertical: 2, gap: 2 },
-  day: { width: 32, height: 32, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  dots: { width: 44, height: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2 },
-  moreKinds: { color: '#77777A', fontSize: 10, lineHeight: 12, fontWeight: '600' },
+  // Just under a seventh: an exact 100/7 can round up and push Sunday onto the next row.
+  cell: { width: '14.28%', height: 44, alignItems: 'center', justifyContent: 'center' },
+  day: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  dayMarked: { backgroundColor: Colors.light.accent },
+  todayRing: { borderWidth: 1.5, borderColor: Colors.light.text },
+  daySelected: { backgroundColor: Colors.light.primary },
 });

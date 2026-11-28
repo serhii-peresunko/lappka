@@ -1,7 +1,11 @@
-import { useI18n } from '@/i18n';
-import { createContext, useCallback, useContext, useMemo, useState, type PropsWithChildren } from 'react';
+import type { User } from '@supabase/supabase-js';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 
-export type AuthMethod = 'apple' | 'google' | 'email';
+import * as api from '@/lib/api';
+import { signInWithEmail, signInWithProvider, signUpWithEmail, type AuthMethod } from '@/lib/auth';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+
+export type { AuthMethod };
 
 export type PetType = 'dog' | 'cat';
 
@@ -55,108 +59,199 @@ type Session = {
   pet: Pet | null;
 };
 
+/** loading: restoring the saved sign-in or fetching the account. error: signed in, but the account could not be read. */
+export type SessionStatus = 'loading' | 'ready' | 'error';
+
 type SessionContextValue = {
+  status: SessionStatus;
   session: Session | null;
   /** The pet type picked in the first pet step, before the details are saved. */
   draftPetType: PetType | null;
   setDraftPetType: (type: PetType | null) => void;
-  signIn: (method: AuthMethod, email?: string) => Promise<void>;
-  signUp: (method: AuthMethod, email?: string) => Promise<void>;
-  saveOwnerName: (name: string) => void;
-  savePet: (pet: Pet) => void;
-  setPetPhoto: (uri: string | null) => void;
+  /** Signs in to an existing account. Throws AuthFailure. */
+  signIn: (method: AuthMethod, email?: string, password?: string) => Promise<void>;
+  /** Creates an account. 'confirm' means the user has to confirm their email first. Throws AuthFailure. */
+  signUp: (method: AuthMethod, email?: string, password?: string) => Promise<'signed-in' | 'confirm'>;
+  signOut: () => Promise<void>;
+  /** Fetches the account again after a failure. */
+  reload: () => void;
+  // Everything below is saved on the server first; the app changes only when that worked, and throws if not.
+  saveOwnerName: (name: string) => Promise<void>;
+  savePet: (pet: Pet) => Promise<void>;
+  setPetPhoto: (uri: string | null) => Promise<void>;
   /** Deletes the pet and its events; the app then asks for a new pet (onboarding). */
-  removePet: () => void;
+  removePet: () => Promise<void>;
   events: PetEvent[];
-  addEvent: (event: Omit<PetEvent, 'id'>) => void;
+  addEvent: (event: Omit<PetEvent, 'id'>) => Promise<void>;
   /** Changes an event. A repeating event is changed as a whole (all its repeats). */
-  updateEvent: (id: string, event: Omit<PetEvent, 'id'>) => void;
+  updateEvent: (id: string, event: Omit<PetEvent, 'id'>) => Promise<void>;
   /** Deletes an event (and, if it repeats, all its repeats). */
-  removeEvent: (id: string) => void;
-  signOut: () => void;
+  removeEvent: (id: string) => Promise<void>;
 };
 
 const SessionContext = createContext<SessionContextValue | null>(null);
 
-// TODO: replace with a real backend. This is an in-memory mock so the flow can be built first.
-// Sign in = an existing account (already has a name and a pet); sign up = a new, empty one.
-const wait = (ms = 500) => new Promise((resolve) => setTimeout(resolve, ms));
+type Account = {
+  /** Whose data this is; compared with the signed-in user so one account never shows another's data. */
+  userId: string;
+  ownerName: string;
+  pet: api.StoredPet | null;
+  events: PetEvent[];
+};
 
-const demoPet = (name: string): Pet => ({
-  type: 'dog',
-  name,
-  sex: 'male',
-  birthDate: '2023-04-12',
-  approxAgeMonths: null,
-  breed: 'Cocker Spaniel',
-  bio: '',
-  instagram: 'bublyk_demo',
-  photo: null,
-  chipped: true,
-  verified: true,
-});
-
-function emailFor(method: AuthMethod, email: string | undefined, isNew: boolean) {
-  if (email) return email;
-  return `${isNew ? 'new.' : ''}${method}.user@example.com`;
-}
+const methodOf = (user: User): AuthMethod => {
+  const provider = user.app_metadata?.provider;
+  return provider === 'google' || provider === 'apple' ? provider : 'email';
+};
 
 export function SessionProvider({ children }: PropsWithChildren) {
-  const { t } = useI18n();
-  const [session, setSession] = useState<Session | null>(null);
+  // undefined: the saved sign-in is not read yet. null: signed out.
+  const [user, setUser] = useState<User | null | undefined>(isSupabaseConfigured ? undefined : null);
+  const [account, setAccount] = useState<Account | null>(null);
+  const [failedFor, setFailedFor] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [draftPetType, setDraftPetType] = useState<PetType | null>(null);
-  const [events, setEvents] = useState<PetEvent[]>([]);
 
-  const signIn = useCallback(async (method: AuthMethod, email?: string) => {
-    await wait();
-    setSession({ method, email: emailFor(method, email, false), ownerName: t('demo.owner'), pet: demoPet(t('demo.pet')) });
-    setEvents([]);
-  }, [t]);
-
-  const signUp = useCallback(async (method: AuthMethod, email?: string) => {
-    await wait();
-    setSession({ method, email: emailFor(method, email, true), ownerName: '', pet: null });
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    // Only state is set here: calling Supabase from inside this callback can deadlock it.
+    const { data } = supabase.auth.onAuthStateChange((event, next) => {
+      setUser(next?.user ?? null);
+      if (event === 'SIGNED_OUT') {
+        setAccount(null);
+        setFailedFor(null);
+        setDraftPetType(null);
+      }
+    });
+    return () => data.subscription.unsubscribe();
   }, []);
 
-  const saveOwnerName = useCallback((name: string) => {
-    setSession((current) => (current ? { ...current, ownerName: name } : current));
+  const userId = user?.id ?? null;
+
+  useEffect(() => {
+    if (!userId) return;
+    let stale = false;
+    api.loadAccount(userId).then(
+      (loaded) => {
+        if (!stale) setAccount({ userId, ...loaded });
+      },
+      (error: unknown) => {
+        console.warn('Could not load the account', error);
+        if (!stale) setFailedFor(userId);
+      }
+    );
+    return () => {
+      stale = true;
+    };
+  }, [userId, attempt]);
+
+  const mine = account && account.userId === userId ? account : null;
+  const status: SessionStatus = user === undefined ? 'loading' : !user || mine ? 'ready' : failedFor === user.id ? 'error' : 'loading';
+
+  const session = useMemo<Session | null>(
+    () => (user && mine ? { method: methodOf(user), email: user.email ?? '', ownerName: mine.ownerName, pet: mine.pet } : null),
+    [user, mine]
+  );
+  const events = useMemo(() => mine?.events ?? [], [mine]);
+
+  const signIn = useCallback(async (method: AuthMethod, email?: string, password?: string) => {
+    if (method === 'email') await signInWithEmail(email ?? '', password ?? '');
+    else await signInWithProvider(method);
   }, []);
 
-  const savePet = useCallback((pet: Pet) => {
-    setSession((current) => (current ? { ...current, pet } : current));
+  const signUp = useCallback(async (method: AuthMethod, email?: string, password?: string) => {
+    if (method === 'email') return signUpWithEmail(email ?? '', password ?? '');
+    await signInWithProvider(method);
+    return 'signed-in' as const;
   }, []);
 
-  const addEvent = useCallback((event: Omit<PetEvent, 'id'>) => {
-    setEvents((current) => [...current, { ...event, id: `${Date.now()}-${current.length}` }]);
+  const signOut = useCallback(async () => {
+    // "local" still signs this phone out when the server cannot be reached.
+    await supabase.auth.signOut({ scope: 'local' });
   }, []);
 
-  const updateEvent = useCallback((id: string, event: Omit<PetEvent, 'id'>) => {
-    setEvents((current) => current.map((item) => (item.id === id ? { ...event, id } : item)));
+  const reload = useCallback(() => {
+    setFailedFor(null);
+    setAttempt((n) => n + 1);
   }, []);
 
-  const removeEvent = useCallback((id: string) => {
-    setEvents((current) => current.filter((item) => item.id !== id));
+  /** Applies a change to the account it was made for (not to another one signed in meanwhile). */
+  const patch = useCallback((id: string, change: (current: Account) => Partial<Account>) => {
+    setAccount((current) => (current && current.userId === id ? { ...current, ...change(current) } : current));
   }, []);
 
-  const setPetPhoto = useCallback((photo: string | null) => {
-    setSession((current) => (current?.pet ? { ...current, pet: { ...current.pet, photo } } : current));
-  }, []);
+  const requireAccount = useCallback(() => {
+    if (!mine) throw new Error('Not signed in');
+    return mine;
+  }, [mine]);
 
-  const removePet = useCallback(() => {
-    setSession((current) => (current ? { ...current, pet: null } : current));
-    setEvents([]);
+  const saveOwnerName = useCallback(
+    async (name: string) => {
+      const { userId: id } = requireAccount();
+      await api.saveProfile(id, name);
+      patch(id, () => ({ ownerName: name }));
+    },
+    [requireAccount, patch]
+  );
+
+  const savePet = useCallback(
+    async (pet: Pet) => {
+      const { userId: id } = requireAccount();
+      const saved = await api.createPet(id, pet);
+      patch(id, () => ({ pet: saved }));
+    },
+    [requireAccount, patch]
+  );
+
+  const setPetPhoto = useCallback(
+    async (uri: string | null) => {
+      const { userId: id, pet } = requireAccount();
+      if (!pet) return;
+      const saved = await api.replacePetPhoto(id, pet, uri);
+      patch(id, () => ({ pet: saved }));
+    },
+    [requireAccount, patch]
+  );
+
+  const removePet = useCallback(async () => {
+    const { userId: id, pet } = requireAccount();
+    if (!pet) return;
+    await api.deletePet(pet);
     setDraftPetType(null);
-  }, []);
+    patch(id, () => ({ pet: null, events: [] }));
+  }, [requireAccount, patch]);
 
-  const signOut = useCallback(() => {
-    setSession(null);
-    setEvents([]);
-    setDraftPetType(null);
-  }, []);
+  const addEvent = useCallback(
+    async (event: Omit<PetEvent, 'id'>) => {
+      const { userId: id, pet } = requireAccount();
+      if (!pet) throw new Error('No pet');
+      const saved = await api.createEvent(pet.id, event);
+      patch(id, (current) => ({ events: [...current.events, saved] }));
+    },
+    [requireAccount, patch]
+  );
+
+  const updateEvent = useCallback(
+    async (eventId: string, event: Omit<PetEvent, 'id'>) => {
+      const { userId: id } = requireAccount();
+      const saved = await api.changeEvent(eventId, event);
+      patch(id, (current) => ({ events: current.events.map((item) => (item.id === eventId ? saved : item)) }));
+    },
+    [requireAccount, patch]
+  );
+
+  const removeEvent = useCallback(
+    async (eventId: string) => {
+      const { userId: id } = requireAccount();
+      await api.deleteEvent(eventId);
+      patch(id, (current) => ({ events: current.events.filter((item) => item.id !== eventId) }));
+    },
+    [requireAccount, patch]
+  );
 
   const value = useMemo(
-    () => ({ session, draftPetType, setDraftPetType, signIn, signUp, saveOwnerName, savePet, setPetPhoto, removePet, events, addEvent, updateEvent, removeEvent, signOut }),
-    [session, draftPetType, signIn, signUp, saveOwnerName, savePet, setPetPhoto, removePet, events, addEvent, updateEvent, removeEvent, signOut]
+    () => ({ status, session, draftPetType, setDraftPetType, signIn, signUp, signOut, reload, saveOwnerName, savePet, setPetPhoto, removePet, events, addEvent, updateEvent, removeEvent }),
+    [status, session, draftPetType, signIn, signUp, signOut, reload, saveOwnerName, savePet, setPetPhoto, removePet, events, addEvent, updateEvent, removeEvent]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

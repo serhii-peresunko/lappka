@@ -19,7 +19,7 @@ export function TextField({ ref, label, error, hint, style, onFocus, onBlur, ...
 
   return (
     <View style={styles.wrapper}>
-      <ThemedText type="small" themeColor="textSecondary">
+      <ThemedText style={styles.label}>
         {label}
       </ThemedText>
       <TextInput
@@ -30,8 +30,8 @@ export function TextField({ ref, label, error, hint, style, onFocus, onBlur, ...
           styles.input,
           {
             color: theme.text,
-            backgroundColor: theme.backgroundElement,
-            borderColor: error ? theme.danger : focused ? theme.primary : 'transparent',
+            backgroundColor: theme.surface,
+            borderColor: error ? theme.danger : focused ? theme.text : 'transparent',
           },
           style,
         ]}
@@ -59,13 +59,14 @@ export function TextField({ ref, label, error, hint, style, onFocus, onBlur, ...
 }
 
 const styles = StyleSheet.create({
+  label: { color: '#6E6E73', fontSize: 13, lineHeight: 17, fontWeight: '600' },
   wrapper: {
     gap: Spacing.one + Spacing.half,
   },
   input: {
     minHeight: 52,
-    borderWidth: 1,
-    borderRadius: 14,
+    borderWidth: 1.5,
+    borderRadius: 16,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two + Spacing.one,
     fontSize: 16,

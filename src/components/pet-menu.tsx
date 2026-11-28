@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { SymbolIcon } from '@/components/ui/symbol-icon';
+import { Colors } from '@/constants/theme';
+import { useTask } from '@/hooks/use-task';
 import { useI18n } from '@/i18n';
 import { useSession } from '@/providers/session';
 
@@ -16,6 +18,7 @@ export function PetMenuButton() {
   const { t } = useI18n();
   const router = useRouter();
   const { removePet } = useSession();
+  const { run } = useTask();
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
   const iconRef = useRef<ComponentRef<typeof Pressable>>(null);
@@ -30,7 +33,7 @@ export function PetMenuButton() {
       ios: 'gearshape',
       material: 'settings',
       danger: false,
-      run: () => router.push('/settings'),
+      run: () => router.push('/profile'),
     },
     {
       key: 'coOwner',
@@ -49,7 +52,7 @@ export function PetMenuButton() {
       run: () =>
         Alert.alert(t('petMenu.deleteTitle'), t('petMenu.deleteMessage'), [
           { text: t('petMenu.cancel'), style: 'cancel' },
-          { text: t('petMenu.delete'), style: 'destructive', onPress: removePet },
+          { text: t('petMenu.delete'), style: 'destructive', onPress: () => void run(removePet) },
         ]),
     },
   ];
@@ -69,7 +72,7 @@ export function PetMenuButton() {
           });
         }}
         style={styles.icon}>
-        <SymbolIcon ios="gearshape" material="settings" color="#8A8A8A" size={19} />
+        <SymbolIcon ios="ellipsis" material="more_horiz" color={Colors.light.text} size={17} />
       </Pressable>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
@@ -89,8 +92,8 @@ export function PetMenuButton() {
                   index > 0 && styles.rowBorder,
                   pressed && { backgroundColor: 'rgba(0,0,0,0.04)' },
                 ]}>
-                <SymbolIcon ios={item.ios} material={item.material} color={item.danger ? '#C0392B' : '#111111'} size={18} />
-                <ThemedText style={[styles.label, item.danger && { color: '#C0392B' }]}>{item.label}</ThemedText>
+                <SymbolIcon ios={item.ios} material={item.material} color={item.danger ? Colors.light.danger : Colors.light.primary} size={18} />
+                <ThemedText style={[styles.label, item.danger && { color: Colors.light.danger }]}>{item.label}</ThemedText>
               </Pressable>
             ))}
           </View>
@@ -101,13 +104,13 @@ export function PetMenuButton() {
 }
 
 const styles = StyleSheet.create({
-  // As wide as the glyph, so its right edge sits exactly on the card's content edge (the footer line and the number).
-  icon: { width: 19, height: 19, alignItems: 'center', justifyContent: 'center' },
+  // A round white button, readable over any photo.
+  icon: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.12)' },
   menu: {
     position: 'absolute',
     minWidth: 230,
-    borderRadius: 14,
+    borderRadius: 8,
     backgroundColor: '#FFFFFF',
     overflow: 'hidden',
     shadowColor: '#000',

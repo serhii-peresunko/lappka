@@ -9,6 +9,7 @@ import { PetArt } from '@/components/ui/pet-art';
 import { Segmented } from '@/components/ui/choice';
 import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
+import { useTask } from '@/hooks/use-task';
 import { useTheme } from '@/hooks/use-theme';
 import { breedLook } from '@/data/breeds';
 import { PetPhoto } from '@/components/ui/pet-photo';
@@ -48,6 +49,7 @@ export default function PetDetailsScreen() {
   // The layout only shows this screen once a type is chosen.
   const type = draftPetType ?? 'dog';
 
+  const { pending, run } = useTask();
   const [breed, setBreed] = useState('');
   const [name, setName] = useState('');
   const [sex, setSex] = useState<PetSex | null>(null);
@@ -89,7 +91,7 @@ export default function PetDetailsScreen() {
   function finish() {
     setSubmitted(true);
     if (errors.breed || errors.name || errors.sex || errors.age || errors.instagram || !sex) return;
-    savePet({
+    void run(() => savePet({
       type,
       name: name.trim(),
       sex,
@@ -102,17 +104,18 @@ export default function PetDetailsScreen() {
       chipped: chipped === 'yes',
       // Verification comes later (from a vet), never from the owner's own form.
       verified: false,
-    });
+    }));
   }
 
   return (
     <FormScreen
+      step={3}
       eyebrow={t('step', { n: 3 })}
       title={t(type === 'cat' ? 'pet.titleCat' : 'pet.titleDog')}
       subtitle={t('pet.subtitle')}
       onBack={() => setDraftPetType(null)}>
       <View style={styles.hero}>
-        <View style={[styles.avatar, { backgroundColor: theme.primarySoft }]}>
+        <View style={[styles.avatar, { backgroundColor: theme.surface }]}>
           <PetArt
             type={type}
             size={84}
@@ -135,11 +138,12 @@ export default function PetDetailsScreen() {
         onChangeText={setName}
         error={submitted ? errors.name : undefined}
         autoCapitalize="words"
+        maxLength={60}
         returnKeyType="next"
       />
 
       <View style={styles.group}>
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="smallBold" style={styles.label}>
           {t('pet.sex')}
         </ThemedText>
         <View style={styles.row}>
@@ -154,8 +158,8 @@ export default function PetDetailsScreen() {
                 style={[
                   styles.sex,
                   {
-                    borderColor: submitted && errors.sex ? theme.danger : selected ? theme.primary : theme.border,
-                    backgroundColor: selected ? theme.primarySoft : theme.backgroundElement,
+                    borderColor: submitted && errors.sex ? theme.danger : selected ? theme.text : theme.surface,
+                    backgroundColor: selected ? theme.raised : theme.surface,
                   },
                 ]}>
                 <ThemedText
@@ -187,7 +191,7 @@ export default function PetDetailsScreen() {
           />
         ) : (
           <>
-            <ThemedText type="small" themeColor="textSecondary">
+            <ThemedText type="smallBold" style={styles.label}>
               {t('pet.approxAge')}
             </ThemedText>
             <View style={styles.row}>
@@ -241,7 +245,7 @@ export default function PetDetailsScreen() {
       />
 
       <View style={styles.group}>
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="smallBold" style={styles.label}>
           {t('pet.photo')}
         </ThemedText>
         <Pressable
@@ -250,7 +254,7 @@ export default function PetDetailsScreen() {
             const uri = await pickPetPhoto();
             if (uri) setPhoto(uri);
           }}
-          style={[styles.photoBox, { backgroundColor: theme.backgroundElement }]}>
+          style={[styles.photoBox, { backgroundColor: theme.surface }]}>
           {photo ? (
             <PetPhoto source={{ uri: photo }} width={96} height={120} />
           ) : (
@@ -264,7 +268,7 @@ export default function PetDetailsScreen() {
       </View>
 
       <View style={styles.group}>
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="smallBold" style={styles.label}>
           {t('pet.chip')}
         </ThemedText>
         <Segmented<'yes' | 'no'>
@@ -289,19 +293,20 @@ export default function PetDetailsScreen() {
       />
 
       {/* Inline, not pinned: a pinned button would leave almost no room above the keyboard. */}
-      <Button title={t('pet.finish')} onPress={finish} />
+      <Button title={t('pet.finish')} loading={pending} onPress={finish} />
     </FormScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  label: { paddingLeft: 4 },
   hero: {
     alignItems: 'center',
   },
   avatar: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
+    width: 128,
+    height: 128,
+    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -317,13 +322,13 @@ const styles = StyleSheet.create({
   },
   sex: {
     flex: 1,
-    minHeight: 52,
+    minHeight: 54,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderRadius: 14,
+    borderWidth: 1.5,
+    borderRadius: 8,
   },
-  photoBox: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, borderRadius: 16, padding: Spacing.three, minHeight: 64, overflow: 'hidden' },
+  photoBox: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, borderRadius: 8, padding: Spacing.three, minHeight: 68, overflow: 'hidden' },
   toggle: {
     alignSelf: 'flex-start',
     minHeight: 44,

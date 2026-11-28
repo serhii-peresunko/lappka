@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { SymbolIcon } from '@/components/ui/symbol-icon';
 import { FormScreen } from '@/components/ui/form-screen';
 import { TextField } from '@/components/ui/text-field';
+import { Colors, Radius } from '@/constants/theme';
+import { useTask } from '@/hooks/use-task';
 import { useTheme } from '@/hooks/use-theme';
 import {
   isoToInput,
@@ -15,7 +17,7 @@ import {
   todayIso,
   toIso,
 } from '@/lib/dates';
-import { EVENT_KIND_ORDER, KIND_ICONS, kindKey } from '@/lib/event-kinds';
+import { EVENT_KIND_ORDER, KIND_COLORS, KIND_ICONS, KIND_SOFT, kindKey } from '@/lib/event-kinds';
 import { useI18n } from '@/i18n';
 import { useSession, type EventKind, type Repeat } from '@/providers/session';
 
@@ -52,19 +54,21 @@ const UNITS: Repeat['unit'][] = ['day', 'week', 'month', 'year'];
 /** Add an event to the calendar: what, which kind, which day and (optionally) what time. */
 export default function AddEventScreen() {
   const router = useRouter();
-  const { date: dateParam, id } = useLocalSearchParams<{ date?: string; id?: string }>();
-  const { addEvent, updateEvent, removeEvent, events } = useSession();
+  const { date: dateParam, id, kind: kindParam } = useLocalSearchParams<{ date?: string; id?: string; kind?: string }>();
+  const { session, addEvent, updateEvent, removeEvent, events } = useSession();
   // With an id the form edits that event; without one it creates a new one.
   const editing = id ? events.find((item) => item.id === id) : undefined;
   const { t, locale } = useI18n();
   const theme = useTheme();
 
+  const { pending, run } = useTask();
   const [description, setDescription] = useState(editing?.description ?? '');
-  const [kind, setKind] = useState<EventKind>(editing?.kind ?? 'vet');
+  const [kind, setKind] = useState<EventKind>(editing?.kind ?? EVENT_KIND_ORDER.find((value) => value === kindParam) ?? 'vet');
   const [dateText, setDateText] = useState(isoToInput(editing?.date ?? dateParam ?? todayIso()));
   const [time, setTime] = useState(editing?.time ?? '');
   const [pickingTime, setPickingTime] = useState(false);
   const [pickingDate, setPickingDate] = useState(false);
+  const [pickingRepeat, setPickingRepeat] = useState(false);
   const [repeatMode, setRepeatMode] = useState<RepeatMode>(() => modeOf(editing?.repeat));
   const [custom, setCustom] = useState<Repeat>(editing?.repeat ?? { every: 2, unit: 'week' });
 
@@ -75,12 +79,11 @@ export default function AddEventScreen() {
     date: date ? undefined : t('event.errDate'),
   };
 
-  function save() {
+  async function save() {
     if (errors.date || !date) return;
     const fields = { description: description.trim(), kind, date, time: time || null, repeat: repeatFor(repeatMode, custom) };
-    if (editing) updateEvent(editing.id, fields);
-    else addEvent(fields);
-    router.back();
+    // The sheet closes only once the server has the event; on a failure the form stays filled.
+    if (await run(() => (editing ? updateEvent(editing.id, fields) : addEvent(fields)))) router.back();
   }
 
   function askDelete() {
@@ -90,9 +93,8 @@ export default function AddEventScreen() {
       {
         text: t('event.delete'),
         style: 'destructive',
-        onPress: () => {
-          removeEvent(editing.id);
-          router.back();
+        onPress: async () => {
+          if (await run(() => removeEvent(editing.id))) router.back();
         },
       },
     ]);
@@ -106,17 +108,20 @@ export default function AddEventScreen() {
     { value: 'custom', label: t('repeat.custom') },
   ];
 
+  // The row shows the chosen repeat; a custom one is spelled out ("Every 2 · Week").
+  const repeatLabel =
+    repeatMode === 'custom'
+      ? `${t('repeat.every')} ${custom.every} · ${t(`repeat.${custom.unit}` as const)}`
+      : (REPEATS.find((item) => item.value === repeatMode)?.label ?? '');
+
   return (
-    <FormScreen title={t(editing ? 'event.editTitle' : 'event.title')} sheet>
+    <FormScreen title={t(editing ? 'event.editTitle' : 'event.title')} onClose={() => router.back()} sheet>
       <View style={styles.stack}>
-        {/* Type: five equal icon tiles in one row; the open one is black and its name is written next to the label. */}
+        {/* The kind as pills with a pastel icon; the chosen one is black. */}
         <View style={styles.group}>
-          <View style={styles.labelRow}>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t('event.type')}
-            </ThemedText>
-            <ThemedText type="smallBold">{t(kindKey(kind))}</ThemedText>
-          </View>
+          <ThemedText type="small" themeColor="textSecondary">
+            {t('event.what', { name: session?.pet?.name ?? '' })}
+          </ThemedText>
           <View style={styles.kinds}>
             {EVENT_KIND_ORDER.map((value) => {
               const selected = value === kind;
@@ -124,72 +129,77 @@ export default function AddEventScreen() {
                 <Pressable
                   key={value}
                   accessibilityRole="radio"
-                  accessibilityLabel={t(kindKey(value))}
                   accessibilityState={{ checked: selected }}
                   onPress={() => setKind(value)}
-                  style={[styles.kindTile, { backgroundColor: selected ? theme.text : theme.backgroundElement }]}>
-                  <SymbolIcon {...KIND_ICONS[value]} color={selected ? theme.background : theme.text} size={22} />
+                  style={({ pressed }) => [styles.kindTile, selected && { backgroundColor: theme.primary }, pressed && { opacity: 0.75 }]}>
+                  <View style={[styles.kindIcon, { backgroundColor: KIND_SOFT[value] }]}>
+                    <SymbolIcon {...KIND_ICONS[value]} color={KIND_COLORS[value]} size={13} />
+                  </View>
+                  <ThemedText style={[styles.kindText, selected && { color: theme.onPrimary }]}>{t(kindKey(value))}</ThemedText>
                 </Pressable>
               );
             })}
           </View>
         </View>
 
-        {/* Date and time share one row. */}
-        <View style={styles.group}>
-          <View style={styles.dateTimeRow}>
-            <View style={[styles.field, { flex: 1.5 }]}>
-              <ThemedText type="small" themeColor="textSecondary">
-                {t('event.date')}
-              </ThemedText>
+        {/* Date, time and repeat: three rows of one card, each with its value in a pill on the right. */}
+        <View style={styles.card}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('event.date')}
+            onPress={() => {
+              setPickingDate((open) => !open);
+              setPickingTime(false);
+              setPickingRepeat(false);
+            }}
+            style={styles.row}>
+            <View style={styles.rowIcon}>
+              <SymbolIcon ios="calendar" material="calendar_month" color={theme.primary} size={18} />
+            </View>
+            <ThemedText style={styles.rowLabel}>{t('event.date')}</ThemedText>
+            <View style={[styles.value, pickingDate && styles.valueOpen]}>
+              <ThemedText style={styles.valueText}>{dateText}</ThemedText>
+            </View>
+          </Pressable>
+          <View style={styles.divider} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('event.time')}
+            onPress={() => {
+              if (!time) setTime('09:00');
+              setPickingTime((open) => !open);
+              setPickingDate(false);
+              setPickingRepeat(false);
+            }}
+            style={styles.row}>
+            <View style={styles.rowIcon}>
+              <SymbolIcon ios="clock" material="schedule" color={theme.primary} size={18} />
+            </View>
+            <ThemedText style={styles.rowLabel} numberOfLines={1}>
+              {t('event.time')}
+            </ThemedText>
+            <View style={[styles.value, pickingTime && styles.valueOpen]}>
+              <ThemedText style={[styles.valueText, !time && { color: theme.textSecondary }]}>{time || t('event.allDay')}</ThemedText>
+            </View>
+            {time ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={t('event.date')}
+                accessibilityLabel={t('event.clearTime')}
+                hitSlop={10}
                 onPress={() => {
-                  setPickingDate((open) => !open);
+                  setTime('');
                   setPickingTime(false);
                 }}
-                style={[styles.pill, { backgroundColor: theme.backgroundElement }]}>
-                <SymbolIcon ios="calendar" material="calendar_month" color={theme.textSecondary} size={18} />
-                <ThemedText style={styles.pillText}>{dateText}</ThemedText>
+                style={styles.clear}>
+                <SymbolIcon ios="xmark" material="close" color={theme.textSecondary} size={13} />
               </Pressable>
-            </View>
-            <View style={[styles.field, { flex: 1 }]}>
-              <ThemedText type="small" themeColor="textSecondary">
-                {t('event.time')}
-              </ThemedText>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t('event.time')}
-                onPress={() => {
-                  if (!time) setTime('09:00');
-                  setPickingTime((open) => !open);
-                  setPickingDate(false);
-                }}
-                style={[styles.pill, { backgroundColor: theme.backgroundElement }]}>
-                <SymbolIcon ios="clock" material="schedule" color={theme.textSecondary} size={18} />
-                <ThemedText style={[styles.pillText, !time && { color: theme.textSecondary }]}>{time || '--:--'}</ThemedText>
-                {time ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={t('event.clearTime')}
-                    hitSlop={10}
-                    onPress={() => {
-                      setTime('');
-                      setPickingTime(false);
-                    }}
-                    style={styles.clear}>
-                    <SymbolIcon ios="xmark" material="close" color={theme.textSecondary} size={13} />
-                  </Pressable>
-                ) : null}
-              </Pressable>
-            </View>
-          </View>
+            ) : null}
+          </Pressable>
           {pickingDate ? (
             <DateTimePicker
               mode="date"
               locale={locale}
-              accentColor="#111111"
+              accentColor={theme.primary}
               display={Platform.OS === 'ios' ? 'inline' : 'default'}
               value={pickedDate}
               onValueChange={(_, picked) => setDateText(isoToInput(toIso(picked)))}
@@ -200,7 +210,7 @@ export default function AddEventScreen() {
             <DateTimePicker
               mode="time"
               locale={locale}
-              accentColor="#111111"
+              accentColor={theme.primary}
               is24Hour
               display={Platform.OS === 'ios' ? 'spinner' : 'default'}
               value={timeToDate(time || '09:00')}
@@ -208,72 +218,92 @@ export default function AddEventScreen() {
               onDismiss={() => setPickingTime(false)}
             />
           ) : null}
-        </View>
-
-        {/* Repeat: slim chips; all five (including "Custom") are visible, wrapping to a second line. */}
-        <View style={styles.group}>
-          <ThemedText type="small" themeColor="textSecondary">
-            {t('event.repeat')}
-          </ThemedText>
-          <View style={styles.chips}>
-            {REPEATS.map((item) => {
-              const selected = item.value === repeatMode;
-              return (
-                <Pressable
-                  key={item.value}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: selected }}
-                  onPress={() => setRepeatMode(item.value)}
-                  style={[styles.chip, { backgroundColor: selected ? theme.text : theme.backgroundElement }]}>
-                  <ThemedText type="small" style={{ color: selected ? theme.background : theme.text }}>
-                    {item.label}
-                  </ThemedText>
-                </Pressable>
-              );
-            })}
-          </View>
-          {repeatMode === 'custom' ? (
-            // The custom repeat sits in its own soft panel: "Every" with a roomy stepper, then the unit as one segmented control.
-            <View style={[styles.customPanel, { backgroundColor: theme.backgroundElement }]}>
-              <View style={styles.everyRow}>
-                <ThemedText style={styles.everyLabel}>{t('repeat.every')}</ThemedText>
-                <View style={styles.stepper}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="-"
-                    hitSlop={6}
-                    onPress={() => setCustom((c) => ({ ...c, every: Math.max(1, c.every - 1) }))}
-                    style={styles.stepBtn}>
-                    <SymbolIcon ios="minus" material="remove" color={theme.text} size={16} />
-                  </Pressable>
-                  <ThemedText style={styles.stepValue}>{custom.every}</ThemedText>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="+"
-                    hitSlop={6}
-                    onPress={() => setCustom((c) => ({ ...c, every: Math.min(99, c.every + 1) }))}
-                    style={styles.stepBtn}>
-                    <SymbolIcon ios="plus" material="add" color={theme.text} size={16} />
-                  </Pressable>
-                </View>
-              </View>
-              <View style={styles.segTrack}>
-                {UNITS.map((unit) => {
-                  const selected = unit === custom.unit;
+          <View style={styles.divider} />
+          {/* Repeat is one row; its choices open under it only when asked for. */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${t('event.repeat')}: ${repeatLabel}`}
+            accessibilityState={{ expanded: pickingRepeat }}
+            onPress={() => {
+              setPickingRepeat((open) => !open);
+              setPickingDate(false);
+              setPickingTime(false);
+            }}
+            style={styles.row}>
+            <View style={styles.rowIcon}>
+              <SymbolIcon ios="repeat" material="repeat" color={theme.primary} size={18} />
+            </View>
+            <ThemedText style={styles.rowLabel}>{t('event.repeat')}</ThemedText>
+            <View style={[styles.value, pickingRepeat && styles.valueOpen]}>
+              <ThemedText style={styles.valueText}>{repeatLabel}</ThemedText>
+            </View>
+          </Pressable>
+          {pickingRepeat ? (
+            <View style={styles.repeatBox}>
+              <View style={styles.chips}>
+                {REPEATS.map((item) => {
+                  const selected = item.value === repeatMode;
                   return (
                     <Pressable
-                      key={unit}
+                      key={item.value}
                       accessibilityRole="radio"
                       accessibilityState={{ checked: selected }}
-                      onPress={() => setCustom((c) => ({ ...c, unit }))}
-                      style={[styles.seg, selected && { backgroundColor: theme.text }]}>
-                      <ThemedText type="small" style={{ color: selected ? theme.background : theme.text, fontWeight: selected ? '600' : '500' }}>
-                        {t(`repeat.${unit}` as const)}
-                      </ThemedText>
+                      hitSlop={4}
+                      onPress={() => {
+                        setRepeatMode(item.value);
+                        // "Custom" stays open for its settings; the ready-made ones close the list.
+                        if (item.value !== 'custom') setPickingRepeat(false);
+                      }}
+                      style={[styles.chip, { backgroundColor: selected ? theme.primary : theme.raised }]}>
+                      <ThemedText style={[styles.chipText, { color: selected ? theme.onPrimary : theme.text }]}>{item.label}</ThemedText>
                     </Pressable>
                   );
                 })}
               </View>
+              {repeatMode === 'custom' ? (
+                // One slim line for "every N", and the unit as a segmented control under it.
+                <View style={styles.custom}>
+                  <View style={styles.everyRow}>
+                    <ThemedText style={styles.everyLabel}>{t('repeat.every')}</ThemedText>
+                    <View style={styles.stepper}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="-"
+                        hitSlop={8}
+                        onPress={() => setCustom((c) => ({ ...c, every: Math.max(1, c.every - 1) }))}
+                        style={styles.stepBtn}>
+                        <SymbolIcon ios="minus" material="remove" color={theme.primary} size={14} />
+                      </Pressable>
+                      <ThemedText style={styles.stepValue}>{custom.every}</ThemedText>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="+"
+                        hitSlop={8}
+                        onPress={() => setCustom((c) => ({ ...c, every: Math.min(99, c.every + 1) }))}
+                        style={styles.stepBtn}>
+                        <SymbolIcon ios="plus" material="add" color={theme.primary} size={14} />
+                      </Pressable>
+                    </View>
+                  </View>
+                  <View style={styles.segTrack}>
+                    {UNITS.map((unit) => {
+                      const selected = unit === custom.unit;
+                      return (
+                        <Pressable
+                          key={unit}
+                          accessibilityRole="radio"
+                          accessibilityState={{ checked: selected }}
+                          onPress={() => setCustom((c) => ({ ...c, unit }))}
+                          style={[styles.seg, selected && { backgroundColor: theme.primary }]}>
+                          <ThemedText style={[styles.chipText, { color: selected ? theme.onPrimary : theme.text }]}>
+                            {t(`repeat.${unit}` as const)}
+                          </ThemedText>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              ) : null}
             </View>
           ) : null}
         </View>
@@ -284,6 +314,7 @@ export default function AddEventScreen() {
           value={description}
           onChangeText={setDescription}
           autoCapitalize="sentences"
+          maxLength={500}
           multiline
           style={styles.multiline}
         />
@@ -291,10 +322,10 @@ export default function AddEventScreen() {
 
       {/* Inline, not pinned: in a sheet the keyboard would cover a pinned footer. */}
       <View style={styles.actions}>
-        <Button title={t(editing ? 'event.saveChanges' : 'event.save')} onPress={save} />
+        <Button title={t(editing ? 'event.saveChanges' : 'event.save')} loading={pending} onPress={save} />
         {editing ? (
-          <Pressable accessibilityRole="button" onPress={askDelete} style={({ pressed }) => [styles.deleteBtn, pressed && { opacity: 0.7 }]}>
-            <SymbolIcon ios="trash" material="delete" color="#C0392B" size={18} />
+          <Pressable accessibilityRole="button" disabled={pending} onPress={askDelete} style={({ pressed }) => [styles.deleteBtn, pressed && { opacity: 0.7 }]}>
+            <SymbolIcon ios="trash" material="delete" color={theme.danger} size={18} />
             <ThemedText style={styles.deleteText}>{t('event.delete')}</ThemedText>
           </Pressable>
         ) : null}
@@ -309,24 +340,33 @@ const styles = StyleSheet.create({
   stack: { gap: 14 },
   group: { gap: 6 },
   labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  kinds: { flexDirection: 'row', gap: 8 },
-  kindTile: { flex: 1, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  dateTimeRow: { flexDirection: 'row', gap: 10 },
-  field: { gap: 6 },
-  pill: { height: 48, borderRadius: 14, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  pillText: { fontSize: 16, fontWeight: '500', flexShrink: 1 },
-  clear: { marginLeft: 'auto', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { height: 40, paddingHorizontal: 16, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  customPanel: { marginTop: 6, padding: 14, borderRadius: 18, gap: 14 },
+  kinds: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  kindTile: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 40, paddingLeft: 7, paddingRight: 14, borderRadius: Radius.pill, backgroundColor: Colors.light.surface },
+  kindIcon: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  kindText: { fontSize: 13, lineHeight: 17, fontWeight: '500' },
+  // The picker opens inside the card, under the rows.
+  card: { backgroundColor: Colors.light.surface, borderRadius: Radius.card, paddingHorizontal: 14, paddingVertical: 2 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56 },
+  rowIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: Colors.light.raised, alignItems: 'center', justifyContent: 'center' },
+  rowLabel: { flex: 1, fontSize: 15, lineHeight: 20, fontWeight: '500' },
+  value: { paddingHorizontal: 10, height: 32, justifyContent: 'center', borderRadius: 10, backgroundColor: Colors.light.surface },
+  valueOpen: { backgroundColor: Colors.light.raised },
+  valueText: { fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  divider: { height: 1, marginLeft: 44, backgroundColor: Colors.light.border },
+  clear: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  repeatBox: { gap: 8, paddingTop: 2, paddingBottom: 12 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  chip: { height: 32, paddingHorizontal: 12, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  chipText: { fontSize: 13, lineHeight: 17, fontWeight: '600' },
+  custom: { gap: 8 },
   everyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  everyLabel: { fontSize: 16, fontWeight: '500' },
-  stepper: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  stepBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
-  stepValue: { minWidth: 44, textAlign: 'center', fontSize: 22, lineHeight: 26, fontWeight: '600' },
-  segTrack: { flexDirection: 'row', padding: 4, borderRadius: 14, backgroundColor: '#FFFFFF', gap: 4 },
-  seg: { flex: 1, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  everyLabel: { fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  stepBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.light.raised, alignItems: 'center', justifyContent: 'center' },
+  stepValue: { minWidth: 36, textAlign: 'center', fontSize: 17, lineHeight: 22, fontWeight: '700' },
+  segTrack: { flexDirection: 'row', padding: 3, borderRadius: Radius.control, backgroundColor: Colors.light.raised, gap: 3 },
+  seg: { flex: 1, height: 30, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   multiline: { minHeight: 64, paddingTop: 12, textAlignVertical: 'top' },
-  deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 14, backgroundColor: 'rgba(192,57,43,0.08)' },
-  deleteText: { color: '#C0392B', fontSize: 16, lineHeight: 20, fontWeight: '500' },
+  deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 54, borderRadius: 999, backgroundColor: Colors.light.surface },
+  deleteText: { color: Colors.light.danger, fontSize: 16, lineHeight: 20, fontWeight: '500' },
 });

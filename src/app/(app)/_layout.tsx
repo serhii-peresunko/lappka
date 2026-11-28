@@ -4,7 +4,8 @@ export default function AppLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="settings" />
+      <Stack.Screen name="profile" />
+      <Stack.Screen name="pet" />
       <Stack.Screen name="events" />
       <Stack.Screen
         name="add-event"
@@ -13,6 +14,7 @@ export default function AppLayout() {
           sheetGrabberVisible: true,
           sheetAllowedDetents: [0.88],
           sheetCornerRadius: 28,
+          contentStyle: { backgroundColor: '#EBEAE6' },
         }}
       />
     </Stack>

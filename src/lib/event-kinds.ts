@@ -4,13 +4,22 @@ import type { EventKind } from '@/providers/session';
 export const EVENT_KIND_ORDER: EventKind[] = ['vet', 'vaccine', 'grooming', 'medication', 'other'];
 
 
-/** One color per kind, used for the calendar dots and the event cards. */
+/** The icon's colour: a deeper shade of the kind's tile. */
 export const KIND_COLORS: Record<EventKind, string> = {
-  vet: '#111111',
-  vaccine: '#4D4D4D',
-  grooming: '#7A7A7A',
-  medication: '#A0A0A0',
-  other: '#C2C2C2',
+  vet: '#000000',
+  vaccine: '#000000',
+  grooming: '#000000',
+  medication: '#000000',
+  other: '#000000',
+};
+
+/** The pastel tile behind a kind's icon. */
+export const KIND_SOFT: Record<EventKind, string> = {
+  vet: '#CFCFCF',
+  vaccine: '#CFCFCF',
+  grooming: '#CFCFCF',
+  medication: '#CFCFCF',
+  other: '#CFCFCF',
 };
 
 /** SF Symbol (iOS) and Material (Android / web) icon names for each kind. */

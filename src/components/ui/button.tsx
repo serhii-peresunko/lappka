@@ -7,7 +7,7 @@ import { useTheme } from '@/hooks/use-theme';
 
 type ButtonProps = Omit<PressableProps, 'children' | 'style'> & {
   title: string;
-  variant?: 'primary' | 'outline' | 'dark';
+  variant?: 'primary' | 'outline' | 'dark' | 'danger';
   loading?: boolean;
   icon?: ReactNode;
 };
@@ -17,11 +17,12 @@ export function Button({ title, variant = 'primary', loading, icon, disabled, ..
   const off = disabled || loading;
 
   const colors = {
-    // Ink (black on light, white on dark) rather than the orange accent.
-    primary: { background: theme.text, text: theme.background, border: theme.text },
-    outline: { background: theme.background, text: theme.text, border: theme.border },
+    // The coral accent for the main action.
+    primary: { background: theme.primary, text: theme.onPrimary, border: theme.primary },
+    outline: { background: theme.surface, text: theme.text, border: theme.surface },
+    danger: { background: theme.surface, text: theme.danger, border: theme.surface },
     // Apple asks for a black button on light backgrounds and a white one on dark.
-    dark: { background: theme.text, text: theme.background, border: theme.text },
+    dark: { background: theme.primary, text: theme.onPrimary, border: theme.primary },
   }[variant];
 
   return (
@@ -32,7 +33,7 @@ export function Button({ title, variant = 'primary', loading, icon, disabled, ..
       style={({ pressed }) => [
         styles.base,
         { backgroundColor: colors.background, borderColor: colors.border },
-        pressed && { opacity: 0.85 },
+        pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
         off && { opacity: 0.5 },
       ]}
       {...rest}>
@@ -52,8 +53,8 @@ export function Button({ title, variant = 'primary', loading, icon, disabled, ..
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 52,
-    borderRadius: 14,
+    minHeight: 54,
+    borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: Spacing.three,
     alignItems: 'center',

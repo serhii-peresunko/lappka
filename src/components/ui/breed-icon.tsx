@@ -6,9 +6,9 @@ import type { PetType } from '@/providers/session';
 import { PetArt } from './pet-art';
 
 // Fixed colors so the coat reads the same in light and dark mode.
-const LINE = '#1A1A1A';
+const LINE = '#111111';
 const ACCENT = '#555555';
-const BACKDROP = '#F0F0F0';
+const BACKDROP = '#EDEDED';
 
 type BreedIconProps = {
   type: PetType;

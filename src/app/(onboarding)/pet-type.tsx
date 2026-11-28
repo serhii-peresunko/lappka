@@ -22,6 +22,7 @@ export default function PetTypeScreen() {
 
   return (
     <FormScreen
+      step={2}
       eyebrow={t('step', { n: 2 })}
       title={t('petType.title')}
       subtitle={t('petType.subtitle')}
@@ -75,12 +76,12 @@ function PetCard({
         style={[
           styles.card,
           {
-            borderColor: selected ? theme.primary : theme.border,
-            backgroundColor: selected ? theme.primarySoft : theme.backgroundElement,
+            borderColor: selected ? theme.text : theme.surface,
+            backgroundColor: theme.surface,
           },
           animated,
         ]}>
-        <View style={[styles.art, { backgroundColor: selected ? theme.background : theme.primarySoft }]}>
+        <View style={[styles.art, { backgroundColor: selected ? theme.hero : theme.raised }]}>
           <PetArt type={type} size={104} color={theme.text} accent={theme.primary} bandana strokeWidth={4} />
         </View>
         <ThemedText type="subtitle" style={[styles.label, selected && { color: theme.primaryText }]}>
@@ -121,7 +122,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.four,
     paddingHorizontal: Spacing.two,
     borderWidth: 2,
-    borderRadius: 24,
+    borderRadius: 8,
   },
   art: {
     width: 132,

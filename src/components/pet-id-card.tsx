@@ -7,6 +7,7 @@ import { PetPhoto } from '@/components/ui/pet-photo';
 import { SymbolIcon } from '@/components/ui/symbol-icon';
 import { PetArt } from '@/components/ui/pet-art';
 import { breedLook, breedName } from '@/data/breeds';
+import { Colors } from '@/constants/theme';
 import { useI18n } from '@/i18n';
 import { ageText, isoToInput } from '@/lib/dates';
 import { useSession } from '@/providers/session';
@@ -146,6 +147,11 @@ const COUNTRY_NAMES: Record<string, { uk: string; en: string }> = {
 };
 
 /** "UA" -> "🇺🇦 Україна": a flag emoji built from the two-letter code, then the name in the app language. */
+export function countryName(code: string, lang: 'uk' | 'en') {
+  const upper = code.toUpperCase();
+  return COUNTRY_NAMES[upper]?.[lang] ?? upper;
+}
+
 export function countryLabel(code: string, lang: 'uk' | 'en') {
   const upper = code.toUpperCase();
   const flag = upper.replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
@@ -184,9 +190,9 @@ const styles = StyleSheet.create({
   colLeft: { width: '56%' },
   colRight: { flex: 1 },
   factsRow: { flexDirection: 'row', columnGap: 12, marginTop: 12 },
-  onDarkLabel: { color: '#8A8A8A' },
-  onDarkValue: { color: '#111111' },
-  onDarkExtra: { color: '#6B6B6B' },
+  onDarkLabel: { color: Colors.light.textSecondary },
+  onDarkValue: { color: Colors.light.text },
+  onDarkExtra: { color: Colors.light.textSecondary },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   watermark: { position: 'absolute', right: -46, bottom: -52, opacity: 0.035, transform: [{ rotate: '-18deg' }] },
   headerPill: { alignSelf: 'flex-start', marginTop: 6, marginLeft: 6, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.82)' },
@@ -203,9 +209,9 @@ const styles = StyleSheet.create({
   nameBig: { color: '#111111', fontSize: 30, lineHeight: 35, fontWeight: '500', flexShrink: 1 },
   breed: { color: '#6B6B6B', fontSize: 13, lineHeight: 17, fontWeight: '500', flexShrink: 1 },
   // Pushed to the bottom of the column, so it lines up with the bottom edge of the photo.
-  factLabel: { color: '#8A8A8A', fontSize: 12, lineHeight: 15, fontWeight: '500' },
+  factLabel: { color: Colors.light.textSecondary, fontSize: 12, lineHeight: 15, fontWeight: '500' },
   // The custom font has no italic face, so the slant is drawn by skewing the text.
-  factExtra: { color: '#6B6B6B', fontSize: 13, lineHeight: 16, fontWeight: '400', marginTop: -2, alignSelf: 'flex-start', transform: [{ skewX: '-10deg' }] },
+  factExtra: { color: Colors.light.textSecondary, fontSize: 13, lineHeight: 16, fontWeight: '400', marginTop: -2, alignSelf: 'flex-start', transform: [{ skewX: '-10deg' }] },
   factValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   // Age beside the date: one line, in the same light grey as the labels.
   factLineInline: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
@@ -215,7 +221,7 @@ const styles = StyleSheet.create({
   lightValue: { fontWeight: '400' },
   compactLabel: { fontSize: 11, lineHeight: 14 },
   compactValue: { fontSize: 14, lineHeight: 18 },
-  factValue: { color: '#111111', fontSize: 16, lineHeight: 21, fontWeight: '500' },
+  factValue: { color: Colors.light.text, fontSize: 16, lineHeight: 21, fontWeight: '500' },
   face: {
     borderRadius: 18,
     // A deep, soft shadow lifts the card off the page.

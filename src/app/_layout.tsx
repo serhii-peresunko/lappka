@@ -7,8 +7,16 @@ import {
 } from '@expo-google-fonts/google-sans-flex';
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 
+import { SessionGate } from '@/components/session-gate';
+import { Colors } from '@/constants/theme';
 import { I18nProvider } from '@/i18n';
 import { SessionProvider, useSession } from '@/providers/session';
+
+// The navigator's own surfaces (behind screens and sheets) follow the app's palette.
+const NAV_THEME = {
+  ...DefaultTheme,
+  colors: { ...DefaultTheme.colors, primary: Colors.light.primary, background: Colors.light.background, card: Colors.light.surface, text: Colors.light.text, border: Colors.light.border },
+};
 
 /**
  * Flow:
@@ -28,6 +36,7 @@ function RootNavigator() {
   const fallback = !signedIn ? '/welcome' : needsOwner ? '/owner' : needsPet ? '/pet-type' : '/';
 
   return (
+    <>
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={!signedIn} redirectTo={fallback}>
         <Stack.Screen name="(auth)" />
@@ -39,6 +48,8 @@ function RootNavigator() {
         <Stack.Screen name="(app)" />
       </Stack.Protected>
     </Stack>
+    <SessionGate />
+    </>
   );
 }
 
@@ -53,7 +64,7 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <ThemeProvider value={DefaultTheme}>
+    <ThemeProvider value={NAV_THEME}>
       <I18nProvider>
         <SessionProvider>
           <RootNavigator />

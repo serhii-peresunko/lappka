@@ -1,3 +1,5 @@
+import 'expo-sqlite/localStorage/install';
+
 import { createContext, useCallback, useContext, useMemo, useState, type PropsWithChildren } from 'react';
 
 import { en, type StringKey } from './en';
@@ -22,9 +24,15 @@ type I18nValue = {
 
 const I18nContext = createContext<I18nValue | null>(null);
 
-/** Ukrainian is the default language; the choice lives in memory for now (no storage yet). */
+const LANG_KEY = 'lappka.lang';
+
+/** Ukrainian is the default language; the choice is kept on the device. */
 export function I18nProvider({ children }: PropsWithChildren) {
-  const [lang, setLang] = useState<Lang>('uk');
+  const [lang, setStored] = useState<Lang>(() => (localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'uk'));
+  const setLang = useCallback((next: Lang) => {
+    localStorage.setItem(LANG_KEY, next);
+    setStored(next);
+  }, []);
 
   const t = useCallback<TFunction>(
     (key, vars) => {
@@ -35,7 +43,7 @@ export function I18nProvider({ children }: PropsWithChildren) {
     [lang]
   );
 
-  const value = useMemo(() => ({ lang, setLang, t, locale: LOCALES[lang] }), [lang, t]);
+  const value = useMemo(() => ({ lang, setLang, t, locale: LOCALES[lang] }), [lang, setLang, t]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 

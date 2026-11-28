@@ -22,14 +22,14 @@ export function AchievementBadge({ achievement, unlocked, size = 44, onDark }: A
         {
           width: size,
           height: size,
-          borderRadius: size / 2,
-          backgroundColor: onDark ? 'rgba(255,255,255,0.88)' : unlocked ? `${achievement.color}2E` : theme.backgroundSelected,
+          borderRadius: 14,
+          backgroundColor: onDark ? 'rgba(255,255,255,0.88)' : unlocked ? theme.accent : theme.raised,
         },
       ]}>
       {unlocked ? (
-        <SymbolIcon {...achievement.icon} color={onDark ? '#1A1A1A' : achievement.color} size={size * 0.46} />
+        <SymbolIcon {...achievement.icon} color={theme.text} size={size * 0.48} />
       ) : (
-        <SymbolIcon ios="lock.fill" material="lock" color={theme.textSecondary} size={size * 0.4} />
+        <SymbolIcon ios="lock.fill" material="lock" color={theme.textTertiary} size={size * 0.42} />
       )}
     </View>
   );

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FormScreen } from '@/components/ui/form-screen';
 import { TextField } from '@/components/ui/text-field';
+import { useTask } from '@/hooks/use-task';
 import { useI18n } from '@/i18n';
 import { useSession } from '@/providers/session';
 
@@ -11,6 +12,7 @@ export default function OwnerScreen() {
   const { saveOwnerName } = useSession();
   const { t } = useI18n();
 
+  const { pending, run } = useTask();
   const [name, setName] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
@@ -20,15 +22,16 @@ export default function OwnerScreen() {
     setSubmitted(true);
     if (error) return;
     // Saving the name unlocks the pet step; the layout then shows it.
-    saveOwnerName(name.trim());
+    void run(() => saveOwnerName(name.trim()));
   }
 
   return (
     <FormScreen
+      step={1}
       eyebrow={t('step', { n: 1 })}
       title={t('owner.title')}
       subtitle={t('owner.subtitle')}
-      footer={<Button title={t('continue')} onPress={next} />}>
+      footer={<Button title={t('continue')} loading={pending} onPress={next} />}>
       <TextField
         label={t('owner.label')}
         placeholder={t('owner.placeholder')}
@@ -36,6 +39,7 @@ export default function OwnerScreen() {
         onChangeText={setName}
         error={submitted ? error : undefined}
         autoCapitalize="words"
+        maxLength={80}
         autoComplete="name"
         textContentType="name"
         returnKeyType="done"

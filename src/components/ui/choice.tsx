@@ -55,7 +55,7 @@ export function ChoiceChips<T extends string>({ options, value, onChange }: Choi
 export function Segmented<T extends string>({ options, value, onChange }: ChoiceProps<T>) {
   const theme = useTheme();
   return (
-    <View style={[styles.segmented, { backgroundColor: theme.backgroundSelected }]}>
+    <View style={[styles.segmented, { backgroundColor: theme.surface }]}>
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -64,10 +64,10 @@ export function Segmented<T extends string>({ options, value, onChange }: Choice
             accessibilityRole="tab"
             accessibilityState={{ selected }}
             onPress={() => onChange(option.value)}
-            style={[styles.segment, selected && { backgroundColor: theme.background }]}>
+            style={[styles.segment, selected && { backgroundColor: theme.primary }]}>
             <ThemedText
               type="smallBold"
-              style={{ color: selected ? theme.primaryText : theme.textSecondary, fontSize: 15 }}>
+              style={{ color: selected ? theme.onPrimary : theme.textSecondary, fontSize: 15 }}>
               {option.label}
             </ThemedText>
           </Pressable>
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   },
   segmented: {
     flexDirection: 'row',
-    borderRadius: 14,
+    borderRadius: 999,
     padding: 4,
   },
   segment: {
@@ -103,6 +103,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 10,
+    borderRadius: 999,
   },
 });

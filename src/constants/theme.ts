@@ -7,22 +7,49 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
+/** From the owner's wireframe: a warm light grey page, flat grey cards with darker grey tiles inside, and black. */
 export const Colors = {
   light: {
     text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F5F5F5',
-    backgroundSelected: '#E4E4E4',
-    textSecondary: '#666666',
-    border: '#E6E6E6',
-    // White text on primary is 4.6:1; primaryText is the same orange family for text on white.
-    primary: '#111111',
-    primaryText: '#111111',
+    textSecondary: '#4A4A4A',
+    textTertiary: '#8A8A8A',
+    background: '#EBEAE6',
+    /** Round header buttons and the tab bar. */
+    control: '#E2E1DD',
+    /** Cards, rows and fields. */
+    surface: '#D9D9D9',
+    /** Small pieces that sit on a surface. */
+    raised: '#CFCFCF',
+    backgroundElement: '#D9D9D9',
+    backgroundSelected: '#C6C6C6',
+    border: '#C9C9C9',
+    primary: '#000000',
+    primaryText: '#000000',
     onPrimary: '#FFFFFF',
-    primarySoft: '#EDEDED',
-    danger: '#C62828',
+    primarySoft: '#CFCFCF',
+    hero: '#D9D9D9',
+    accent: '#FFFFFF',
+    gold: '#000000',
+    blue: '#000000',
+    blueSoft: '#CFCFCF',
+    pink: '#000000',
+    pinkSoft: '#CFCFCF',
+    danger: '#A3281F',
+    dangerSoft: '#D9D9D9',
   },
 } as const;
+
+/** One very soft shadow, for the few floating pieces (the tab bar, the add button). */
+export const CARD_SHADOW = {
+  shadowColor: '#000000',
+  shadowOpacity: 0.08,
+  shadowRadius: 16,
+  shadowOffset: { width: 0, height: 6 },
+  elevation: 3,
+} as const;
+
+/** Corner radii. */
+export const Radius = { card: 20, tile: 12, control: 16, pill: 999 } as const;
 
 /** Bottom space a scroll view needs so its last item clears the floating tab bar. */
 export const TAB_BAR_SPACE = 120;

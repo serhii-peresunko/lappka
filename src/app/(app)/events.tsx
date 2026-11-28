@@ -16,7 +16,7 @@ export default function EventsScreen() {
 
   return (
     <FormScreen title={t('home.comingUp')} onBack={() => router.back()}>
-      <EventTimeline groups={groups} highlightFirst />
+      <EventTimeline groups={groups} withDate />
     </FormScreen>
   );
 }
